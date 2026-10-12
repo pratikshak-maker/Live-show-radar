@@ -1,0 +1,48 @@
+import type { Origin } from "./types";
+
+export type SeedArtist = { name: string; origin: Origin; favorite?: boolean };
+
+export const SEED_ARTISTS: SeedArtist[] = [
+  // India
+  { name: "Prateek Kuhad", origin: "india", favorite: true },
+  { name: "When Chai Met Toast", origin: "india" },
+  { name: "The Local Train", origin: "india" },
+  { name: "Peter Cat Recording Co.", origin: "india" },
+  { name: "Anuv Jain", origin: "india", favorite: true },
+  { name: "Seedhe Maut", origin: "india" },
+  { name: "Ritviz", origin: "india" },
+  { name: "Taba Chake", origin: "india" },
+  { name: "Thaikkudam Bridge", origin: "india" },
+  { name: "Swarathma", origin: "india" },
+  { name: "Raghu Dixit Project", origin: "india" },
+  { name: "The Yellow Diary", origin: "india" },
+  { name: "Easy Wanderlings", origin: "india" },
+  { name: "Dhruv Visvanath", origin: "india" },
+  { name: "Lifafa", origin: "india" },
+  { name: "Parvaaz", origin: "india" },
+  { name: "Hanumankind", origin: "india" },
+  { name: "Nucleya", origin: "india" },
+  { name: "Lost Stories", origin: "india" },
+  { name: "Sanjeeta Bhattacharya", origin: "india" },
+  { name: "Kamakshi Khanna", origin: "india" },
+  { name: "Aswekeepsearching", origin: "india" },
+  { name: "Komorebi", origin: "india" },
+  { name: "Mali", origin: "india" },
+  // International
+  { name: "Cigarettes After Sex", origin: "international", favorite: true },
+  { name: "The Lumineers", origin: "international" },
+  { name: "Lauv", origin: "international" },
+  { name: "Jacob Collier", origin: "international" },
+  { name: "Bonobo", origin: "international" },
+  { name: "Ben Böhmer", origin: "international" },
+  { name: "Khruangbin", origin: "international", favorite: true },
+  { name: "Cory Wong", origin: "international" },
+  { name: "Polyphia", origin: "international" },
+  { name: "Plini", origin: "international" },
+  { name: "Tycho", origin: "international" },
+  { name: "Men I Trust", origin: "international" },
+  { name: "Novo Amor", origin: "international" },
+  { name: "Sigur Rós", origin: "international" },
+  { name: "FKJ", origin: "international" },
+  { name: "Rufus Du Sol", origin: "international" },
+];

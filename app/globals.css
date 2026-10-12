@@ -1,0 +1,235 @@
+@import "tailwindcss";
+
+/* "The stage at night" — design tokens. Dark is the default. */
+:root {
+  --bg: #1a1030;
+  --surface: #251942;
+  --surface-raised: #32235a;
+  --text: #f4eeff;
+  --text-muted: #a99bc9;
+  --stage: #ff4f8b;
+  --stage-ink: #1a1030;
+  --urgent: #ffb534;
+  --confirmed: #5be3b6;
+  --line: rgba(244, 238, 255, 0.1);
+  --glow: rgba(255, 79, 139, 0.35);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #fbf8ff;
+  --surface: #ffffff;
+  --surface-raised: #f1eafb;
+  --text: #1e1534;
+  --text-muted: #5e5378;
+  --stage: #d62f6c;
+  --stage-ink: #ffffff;
+  --urgent: #b86e00;
+  --confirmed: #0e8a63;
+  --line: rgba(30, 21, 52, 0.1);
+  --glow: rgba(214, 47, 108, 0.25);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #fbf8ff;
+    --surface: #ffffff;
+    --surface-raised: #f1eafb;
+    --text: #1e1534;
+    --text-muted: #5e5378;
+    --stage: #d62f6c;
+    --stage-ink: #ffffff;
+    --urgent: #b86e00;
+    --confirmed: #0e8a63;
+    --line: rgba(30, 21, 52, 0.1);
+    --glow: rgba(214, 47, 108, 0.25);
+    color-scheme: light;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-stage: var(--stage);
+  --color-stage-ink: var(--stage-ink);
+  --color-urgent: var(--urgent);
+  --color-confirmed: var(--confirmed);
+  --color-line: var(--line);
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 18px;
+  --radius-btn: 12px;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
+
+:focus-visible {
+  outline: 2px solid var(--stage);
+  outline-offset: 2px;
+}
+
+.artist-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 85%;
+  letter-spacing: -0.01em;
+}
+
+/* ── Ticket stub card: perforation + notches cut with mask ─────────── */
+.stub-card {
+  --notch: 11px;
+  --stub-w: 132px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr var(--stub-w);
+  background: var(--surface);
+  border-radius: 18px;
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  border: 1px solid var(--line);
+  transition: background-color 0.15s;
+}
+.stub-card:hover {
+  background: var(--surface-raised);
+}
+.stub-card.is-glow {
+  box-shadow: 0 0 0 1px var(--stage), 0 0 28px -4px var(--glow);
+}
+.stub-perf {
+  border-left: 2px dashed var(--line);
+  margin: 14px 0;
+}
+@media (max-width: 520px) {
+  .stub-card {
+    --stub-w: 108px;
+  }
+}
+
+/* ── Radar sweep (the one orchestrated motion) ─────────────────────── */
+@keyframes sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.radar-icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  overflow: hidden;
+}
+.radar-icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 0deg, transparent 0 70%, currentColor 100%);
+  opacity: 0;
+}
+.radar-icon.is-sweeping::after {
+  opacity: 0.85;
+  animation: sweep 1.4s linear infinite;
+}
+
+@keyframes pulse-once {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.pulse-minute {
+  animation: pulse-once 2s ease-in-out 1;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.slide-in {
+  animation: slide-in 0.35s ease-out both;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.sheet-in {
+  animation: sheet-in 0.22s ease-out both;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-raised) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-icon.is-sweeping::after {
+    animation: none;
+    opacity: 0;
+  }
+  .pulse-minute,
+  .slide-in,
+  .sheet-in,
+  .skeleton {
+    animation: none;
+  }
+  * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Leaflet needs to sit under our sheets */
+.leaflet-container {
+  font-family: var(--font-sans);
+  border-radius: 18px;
+  background: var(--surface);
+}

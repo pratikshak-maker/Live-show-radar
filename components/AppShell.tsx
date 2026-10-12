@@ -1,0 +1,28 @@
+"use client";
+
+import { ToastProvider } from "./ToastProvider";
+import { ScanProvider } from "./ScanProvider";
+import { Header } from "./Header";
+import { BottomTabs } from "./BottomTabs";
+import { StatusLine } from "./StatusLine";
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <ToastProvider>
+      <ScanProvider>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-[12px] focus:bg-stage focus:px-4 focus:py-2 focus:text-stage-ink"
+        >
+          Skip to content
+        </a>
+        <Header />
+        <StatusLine />
+        <main id="main" className="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 md:pb-16">
+          {children}
+        </main>
+        <BottomTabs />
+      </ScanProvider>
+    </ToastProvider>
+  );
+}
