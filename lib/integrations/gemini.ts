@@ -8,6 +8,8 @@ import { errMessage, fail, notConfigured, ok, type Result } from "../result";
 export class GeminiBudget {
   calls = 0;
   quotaExhausted = false;
+  /** Google-Search grounding isn't available on this key's plan (or its quota is spent). */
+  groundingBlocked = false;
   constructor(public max: number = readEnv().GEMINI_MAX_CALLS_PER_RUN) {}
   get exhausted(): boolean {
     return this.calls >= this.max;
@@ -31,6 +33,7 @@ export type GroundedSource = {
 
 type ErrClass =
   | { kind: "daily_quota" }
+  | { kind: "plan_quota" }
   | { kind: "rate_limited"; retryMs: number | null }
   | { kind: "overloaded" }
   | { kind: "other"; message: string; status: number | null };
@@ -44,6 +47,8 @@ export function classifyGeminiError(e: unknown): ErrClass {
     const m =
       /"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/.exec(message) ??
       /retry in (\d+(?:\.\d+)?)s/i.exec(message);
+    // No retry hint + "plan and billing": the feature isn't in this key's quota at all. Retrying won't help.
+    if (!m && /plan and billing/i.test(message)) return { kind: "plan_quota" };
     return { kind: "rate_limited", retryMs: m ? Math.ceil(Number(m[1]) * 1000) : null };
   }
   // 500/503 "model overloaded / high demand" is transient: retry with backoff.
@@ -55,13 +60,27 @@ export function classifyGeminiError(e: unknown): ErrClass {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+type CallKind = "grounded" | "json" | "plain";
+
+/** Primary model first; on "overloaded" the next attempt switches to the fallback model. */
+function modelsToTry(): string[] {
+  const e = readEnv();
+  return [...new Set([e.GEMINI_MODEL, e.GEMINI_FALLBACK_MODEL])];
+}
+
 async function withRetries<T>(
   budget: GeminiBudget,
   timeoutMs: number,
-  call: (signal: AbortSignal) => Promise<T>,
+  kind: CallKind,
+  call: (signal: AbortSignal, model: string) => Promise<T>,
 ): Promise<Result<{ value: T; latencyMs: number }>> {
   if (!readEnv().GEMINI_API_KEY) return notConfigured("Gemini");
   if (budget.quotaExhausted) return fail("quota_exhausted", "Gemini's daily quota is used up.");
+  if (kind === "grounded" && budget.groundingBlocked) {
+    return fail("quota_exhausted", "Gemini web search isn't available on this API key's plan.");
+  }
+  const models = modelsToTry();
+  let modelIdx = 0;
   const backoffs = [1000, 3000];
   for (let attempt = 0; attempt <= backoffs.length; attempt++) {
     if (budget.exhausted)
@@ -72,13 +91,24 @@ async function withRetries<T>(
     const timer = setTimeout(() => ctl.abort(), timeoutMs);
     const started = Date.now();
     try {
-      const value = await call(ctl.signal);
+      const value = await call(ctl.signal, models[modelIdx]);
       return ok({ value, latencyMs: Date.now() - started });
     } catch (e) {
       const c = classifyGeminiError(e);
       if (c.kind === "daily_quota") {
         budget.quotaExhausted = true;
         return fail("quota_exhausted", "Gemini's daily quota is used up.");
+      }
+      if (c.kind === "plan_quota") {
+        if (kind === "grounded") {
+          budget.groundingBlocked = true;
+          return fail(
+            "quota_exhausted",
+            "Gemini web search isn't available on this API key's plan.",
+          );
+        }
+        budget.quotaExhausted = true;
+        return fail("quota_exhausted", "This Gemini API key has no quota left for this model.");
       }
       if (c.kind === "rate_limited") {
         if (attempt < backoffs.length) {
@@ -89,12 +119,21 @@ async function withRetries<T>(
       }
       if (c.kind === "overloaded") {
         if (attempt < backoffs.length) {
-          await sleep(backoffs[attempt]);
+          if (modelIdx < models.length - 1)
+            modelIdx++; // try the lighter model straight away
+          else await sleep(backoffs[attempt]);
           continue;
         }
         return fail("upstream_error", "Gemini is busy right now. We'll retry on the next check.");
       }
-      if (ctl.signal.aborted) return fail("upstream_error", "Gemini timed out.");
+      if (ctl.signal.aborted) {
+        // A hung request usually means the model is saturated: try the lighter model once.
+        if (attempt < backoffs.length && modelIdx < models.length - 1) {
+          modelIdx++;
+          continue;
+        }
+        return fail("upstream_error", "Gemini timed out.");
+      }
       return fail("upstream_error", c.message.slice(0, 300));
     } finally {
       clearTimeout(timer);
@@ -133,9 +172,9 @@ export async function groundedSearch(
 ): Promise<Result<{ text: string; sources: GroundedSource[]; latencyMs: number }>> {
   const ai = getAi();
   if (!ai) return notConfigured("Gemini");
-  const r = await withRetries(budget, 30_000, (signal) =>
+  const r = await withRetries(budget, 30_000, "grounded", (signal, model) =>
     ai.models.generateContent({
-      model: readEnv().GEMINI_MODEL,
+      model,
       contents: prompt,
       config: { tools: [{ googleSearch: {} }], temperature: 0.2, abortSignal: signal },
     }),
@@ -179,9 +218,9 @@ export async function generateJson<S extends z.ZodTypeAny>(
   let contents = prompt;
   let lastErrors = "";
   for (let attempt = 0; attempt < 2; attempt++) {
-    const r = await withRetries(budget, timeoutMs, (signal) =>
+    const r = await withRetries(budget, timeoutMs, "json", (signal, model) =>
       ai.models.generateContent({
-        model: readEnv().GEMINI_MODEL,
+        model,
         contents,
         config: {
           responseMimeType: "application/json",
@@ -216,13 +255,12 @@ export async function generateJson<S extends z.ZodTypeAny>(
 export async function ping(): Promise<Result<string>> {
   const ai = getAi();
   if (!ai) return notConfigured("Gemini");
-  try {
-    const r = await ai.models.generateContent({
-      model: readEnv().GEMINI_MODEL,
+  const r = await withRetries(new GeminiBudget(4), 15_000, "plain", (signal, model) =>
+    ai.models.generateContent({
+      model,
       contents: "Reply with the single word: ok",
-    });
-    return ok((r.text ?? "").trim().slice(0, 20));
-  } catch (e) {
-    return fail("upstream_error", errMessage(e).slice(0, 200));
-  }
+      config: { abortSignal: signal },
+    }),
+  );
+  return r.ok ? ok((r.data.value.text ?? "").trim().slice(0, 20)) : r;
 }

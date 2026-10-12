@@ -61,7 +61,7 @@ export async function discover(artist: ArtistRow, ctx: RunCtx): Promise<Discover
       g.reason === "not_configured"
         ? "Gemini isn't connected, so I'll use ticketing sources only."
         : g.reason === "quota_exhausted"
-          ? "Gemini's quota is used up for now — falling back to other sources."
+          ? `${g.message} Falling back to other sources.`
           : "Couldn't reach the search service — trying other sources.";
     await logger.warn("search", why, name);
   }
