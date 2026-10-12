@@ -35,11 +35,19 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!body.ok) return body.res;
 
   const rl = await rateLimit("decision", rateLimitScopeForRequest(req));
-  if (!rl.allowed) return apiError("rate_limited", "That's a lot of changes — try again soon.", 429, { retryAfterSeconds: rl.retryAfterSeconds });
+  if (!rl.allowed)
+    return apiError("rate_limited", "That's a lot of changes — try again soon.", 429, {
+      retryAfterSeconds: rl.retryAfterSeconds,
+    });
 
   const show = await getShow(id);
   if (!show) return apiError("not_found", "That show doesn't exist.", 404);
-  if (show.is_sample) return apiError("sample", "This is a sample show — real shows appear after the first check.", 400);
+  if (show.is_sample)
+    return apiError(
+      "sample",
+      "This is a sample show — real shows appear after the first check.",
+      400,
+    );
 
   await db.from("shows").update({ decision: body.data.decision }).eq("id", id);
 
@@ -61,14 +69,24 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     if (!ev) continue;
     if (google.connected) {
       // Idempotent: never create a duplicate for (show, kind).
-      const { data: existing } = await db.from("calendar_events").select("html_link").eq("show_id", id).eq("kind", kind).maybeSingle();
+      const { data: existing } = await db
+        .from("calendar_events")
+        .select("html_link")
+        .eq("show_id", id)
+        .eq("kind", kind)
+        .maybeSingle();
       if (existing) {
         created.push({ kind, htmlLink: (existing.html_link as string | null) ?? null });
         continue;
       }
       const r = await createCalendarEvent(ev, `${appUrl}/?show=${id}`);
       if (r.ok) {
-        await db.from("calendar_events").upsert({ show_id: id, kind, google_event_id: r.data.id, html_link: r.data.htmlLink }, { onConflict: "show_id,kind", ignoreDuplicates: true });
+        await db
+          .from("calendar_events")
+          .upsert(
+            { show_id: id, kind, google_event_id: r.data.id, html_link: r.data.htmlLink },
+            { onConflict: "show_id,kind", ignoreDuplicates: true },
+          );
         created.push({ kind, htmlLink: r.data.htmlLink });
         continue;
       }
@@ -77,7 +95,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     templateLinks.push({ kind, url: templateLink(ev) });
   }
 
-  return NextResponse.json({ decision: body.data.decision, created, templateLinks, googleConnected: google.connected });
+  return NextResponse.json({
+    decision: body.data.decision,
+    created,
+    templateLinks,
+    googleConnected: google.connected,
+  });
 }
 
 /** Undo: remove one calendar event (and its row), or clear the decision when no kind is given. */
@@ -94,8 +117,17 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
   }
   const parsed = z.enum(KINDS).safeParse(kindParam);
   if (!parsed.success) return apiError("invalid_request", "Unknown calendar kind.");
-  const { data: row } = await db.from("calendar_events").select("id, google_event_id").eq("show_id", id).eq("kind", parsed.data).maybeSingle();
+  const { data: row } = await db
+    .from("calendar_events")
+    .select("id, google_event_id")
+    .eq("show_id", id)
+    .eq("kind", parsed.data)
+    .maybeSingle();
   if (row?.google_event_id) await deleteCalendarEvent(row.google_event_id as string);
-  if (row) await db.from("calendar_events").delete().eq("id", row.id as string);
+  if (row)
+    await db
+      .from("calendar_events")
+      .delete()
+      .eq("id", row.id as string);
   return NextResponse.json({ ok: true });
 }

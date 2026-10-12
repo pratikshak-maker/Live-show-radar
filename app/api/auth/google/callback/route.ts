@@ -25,7 +25,10 @@ export async function GET(req: Request) {
     if (!tokens.refresh_token) return go("google=no_refresh_token"); // user must re-consent
     let email: string | null = null;
     if (tokens.id_token && env.GOOGLE_CLIENT_ID) {
-      const ticket = await client.verifyIdToken({ idToken: tokens.id_token, audience: env.GOOGLE_CLIENT_ID });
+      const ticket = await client.verifyIdToken({
+        idToken: tokens.id_token,
+        audience: env.GOOGLE_CLIENT_ID,
+      });
       email = ticket.getPayload()?.email ?? null;
     }
     const saved = await saveTokens("google", {

@@ -1,5 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { dedupeKey, isHomeCity, isHttpUrl, isTicketingDomain, normalizeArtist, venueKey } from "../normalize";
+import {
+  dedupeKey,
+  isHomeCity,
+  isHttpUrl,
+  isTicketingDomain,
+  normalizeArtist,
+  venueKey,
+} from "../normalize";
 import { deriveEarlyBird, priorityScore } from "../scoring";
 import { diffDaysISO } from "../time";
 import type { ArtistRow, ChangeType, ShowRow, SourceRef, Tier } from "../types";
@@ -36,7 +43,15 @@ export function mergeSources(old: SourceRef[], incoming: SourceRef[]): SourceRef
 
 export type ShowPatch = Omit<
   ShowRow,
-  "id" | "artist_id" | "decision" | "ai_brief" | "ai_brief_hash" | "is_sample" | "first_seen_at" | "venue_id" | "updated_at"
+  | "id"
+  | "artist_id"
+  | "decision"
+  | "ai_brief"
+  | "ai_brief_hash"
+  | "is_sample"
+  | "first_seen_at"
+  | "venue_id"
+  | "updated_at"
 >;
 
 export type UpsertPlan = { patch: ShowPatch; changes: ChangeType[]; isNew: boolean };
@@ -64,9 +79,17 @@ export function planUpsert(
   }
 
   const prices = tiers.map((t) => t.price_inr).filter((p): p is number => typeof p === "number");
-  const ticketUrl = isHttpUrl(vc.ticket_url) && isTicketingDomain(vc.ticket_url) ? vc.ticket_url : (old?.ticket_url ?? (isHttpUrl(vc.ticket_url) ? vc.ticket_url : null));
+  const ticketUrl =
+    isHttpUrl(vc.ticket_url) && isTicketingDomain(vc.ticket_url)
+      ? vc.ticket_url
+      : (old?.ticket_url ?? (isHttpUrl(vc.ticket_url) ? vc.ticket_url : null));
   const confidence = Math.max(old ? Number(old.confidence) : 0, vc.confidence);
-  const status = vc.status === "scheduled" ? (old?.status === "cancelled" ? "scheduled" : (old?.status ?? "scheduled")) : vc.status;
+  const status =
+    vc.status === "scheduled"
+      ? old?.status === "cancelled"
+        ? "scheduled"
+        : (old?.status ?? "scheduled")
+      : vc.status;
   const isHome = isHomeCity(vc.cityInfo.name, homeCity);
 
   const patch: ShowPatch = {
@@ -84,7 +107,9 @@ export function planUpsert(
     ticket_url: ticketUrl,
     ticket_platform: vc.ticket_platform ?? old?.ticket_platform ?? null,
     early_bird_status: eb.status,
-    early_bird_deadline: eb.deadline ?? (eb.status === "unknown" || eb.status === "open" ? (old?.early_bird_deadline ?? null) : null),
+    early_bird_deadline:
+      eb.deadline ??
+      (eb.status === "unknown" || eb.status === "open" ? (old?.early_bird_deadline ?? null) : null),
     on_sale_at: onSaleAt,
     price_min_inr: prices.length ? Math.min(...prices) : (old?.price_min_inr ?? null),
     price_max_inr: prices.length ? Math.max(...prices) : (old?.price_max_inr ?? null),
@@ -94,10 +119,18 @@ export function planUpsert(
     sources,
     status,
     last_seen_at: now.toISOString(),
-    last_enriched_at: vc.sourceRefs.some((s) => s.kind === "scrapingbee") ? now.toISOString() : (old?.last_enriched_at ?? null),
+    last_enriched_at: vc.sourceRefs.some((s) => s.kind === "scrapingbee")
+      ? now.toISOString()
+      : (old?.last_enriched_at ?? null),
   };
   patch.priority_score = priorityScore(
-    { isHomeCity: isHome, earlyBird: eb.status, firstSeenAt: old?.first_seen_at ?? now.toISOString(), isFavorite: artist.is_favorite, confidence },
+    {
+      isHomeCity: isHome,
+      earlyBird: eb.status,
+      firstSeenAt: old?.first_seen_at ?? now.toISOString(),
+      isFavorite: artist.is_favorite,
+      confidence,
+    },
     now,
   );
 
@@ -105,14 +138,28 @@ export function planUpsert(
   if (!old) {
     changes.push("new_show");
   } else {
-    if (eb.status === "open" && ["unknown", "imminent", "not_offered"].includes(old.early_bird_status)) changes.push("early_bird_opened");
-    if (eb.status === "closing_soon" && old.early_bird_status !== "closing_soon") changes.push("early_bird_closing_soon");
-    if (eb.status === "imminent" && old.early_bird_status !== "imminent" && eb.deadline) changes.push("early_bird_imminent");
+    if (
+      eb.status === "open" &&
+      ["unknown", "imminent", "not_offered"].includes(old.early_bird_status)
+    )
+      changes.push("early_bird_opened");
+    if (eb.status === "closing_soon" && old.early_bird_status !== "closing_soon")
+      changes.push("early_bird_closing_soon");
+    if (eb.status === "imminent" && old.early_bird_status !== "imminent" && eb.deadline)
+      changes.push("early_bird_imminent");
     if (!old.early_bird_deadline && patch.early_bird_deadline) changes.push("deadline_found");
-    const oldSold = new Set(old.tiers.filter((t) => t.status === "sold_out").map((t) => t.name.toLowerCase()));
-    if (tiers.some((t) => t.status === "sold_out" && !oldSold.has(t.name.toLowerCase()))) changes.push("tier_sold_out");
+    const oldSold = new Set(
+      old.tiers.filter((t) => t.status === "sold_out").map((t) => t.name.toLowerCase()),
+    );
+    if (tiers.some((t) => t.status === "sold_out" && !oldSold.has(t.name.toLowerCase())))
+      changes.push("tier_sold_out");
     if (dateChanged) changes.push("date_changed");
-    if (old.venue_name && patch.venue_name && normalizeArtist(old.venue_name) !== normalizeArtist(patch.venue_name)) changes.push("venue_changed");
+    if (
+      old.venue_name &&
+      patch.venue_name &&
+      normalizeArtist(old.venue_name) !== normalizeArtist(patch.venue_name)
+    )
+      changes.push("venue_changed");
     if (status === "cancelled" && old.status !== "cancelled") changes.push("cancelled");
   }
   return { patch, changes, isNew: !old };
@@ -160,7 +207,12 @@ export async function reconcileCandidate(
   } else {
     const { data, error } = await db
       .from("shows")
-      .insert({ ...plan.patch, artist_id: artist.id, venue_id: venueId, first_seen_at: now.toISOString() })
+      .insert({
+        ...plan.patch,
+        artist_id: artist.id,
+        venue_id: venueId,
+        first_seen_at: now.toISOString(),
+      })
       .select("*")
       .single();
     if (error || !data) return null;
@@ -174,8 +226,20 @@ export async function reconcileCandidate(
       .insert({
         show_id: row.id,
         change_type: type,
-        before: old ? { early_bird_status: old.early_bird_status, start_date: old.start_date, venue_name: old.venue_name, early_bird_deadline: old.early_bird_deadline } : null,
-        after: { early_bird_status: row.early_bird_status, start_date: row.start_date, venue_name: row.venue_name, early_bird_deadline: row.early_bird_deadline },
+        before: old
+          ? {
+              early_bird_status: old.early_bird_status,
+              start_date: old.start_date,
+              venue_name: old.venue_name,
+              early_bird_deadline: old.early_bird_deadline,
+            }
+          : null,
+        after: {
+          early_bird_status: row.early_bird_status,
+          start_date: row.start_date,
+          venue_name: row.venue_name,
+          early_bird_deadline: row.early_bird_deadline,
+        },
       })
       .select("id")
       .single();

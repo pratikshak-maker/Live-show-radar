@@ -95,7 +95,12 @@ export function RadarView({
       const hidden = s.decision === "not_interested";
       if (showHidden ? !hidden : hidden) return false;
       if (city !== "All" && s.city !== city) return false;
-      if (needle && !s.artist.name.toLowerCase().includes(needle) && !(s.venue_name ?? "").toLowerCase().includes(needle)) return false;
+      if (
+        needle &&
+        !s.artist.name.toLowerCase().includes(needle) &&
+        !(s.venue_name ?? "").toLowerCase().includes(needle)
+      )
+        return false;
       return true;
     });
   }, [shows, city, q, showHidden]);
@@ -132,14 +137,22 @@ export function RadarView({
               onClick={() => setView(v)}
               className={`inline-flex min-h-10 items-center gap-1.5 rounded-[10px] px-3.5 text-sm font-medium ${view === v ? "bg-raised text-ink" : "text-muted"}`}
             >
-              {v === "list" ? <List className="h-4 w-4" aria-hidden /> : <MapIcon className="h-4 w-4" aria-hidden />}
+              {v === "list" ? (
+                <List className="h-4 w-4" aria-hidden />
+              ) : (
+                <MapIcon className="h-4 w-4" aria-hidden />
+              )}
               {v === "list" ? "List" : "Map"}
             </button>
           ))}
         </div>
         <label className="text-sm">
           <span className="sr-only">City</span>
-          <select value={city} onChange={(e) => setCity(e.target.value)} className="min-h-11 rounded-[12px] border border-line bg-surface px-3 text-sm">
+          <select
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="min-h-11 rounded-[12px] border border-line bg-surface px-3 text-sm"
+          >
             {cities.map((c) => (
               <option key={c} value={c}>
                 {c === "All" ? "City: All" : c}
@@ -149,11 +162,24 @@ export function RadarView({
         </label>
         <label className="relative min-w-[160px] flex-1 sm:max-w-xs">
           <span className="sr-only">Search artist</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search artist…" className="min-h-11 w-full rounded-[12px] border border-line bg-surface pl-9 pr-3 text-sm placeholder:text-muted" />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            aria-hidden
+          />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search artist…"
+            className="min-h-11 w-full rounded-[12px] border border-line bg-surface pl-9 pr-3 text-sm placeholder:text-muted"
+          />
         </label>
         {hiddenCount > 0 && (
-          <button type="button" onClick={() => setShowHidden((h) => !h)} aria-pressed={showHidden} className={`min-h-11 rounded-[12px] px-3 text-sm ${showHidden ? "bg-raised text-ink" : "text-muted hover:text-ink"}`}>
+          <button
+            type="button"
+            onClick={() => setShowHidden((h) => !h)}
+            aria-pressed={showHidden}
+            className={`min-h-11 rounded-[12px] px-3 text-sm ${showHidden ? "bg-raised text-ink" : "text-muted hover:text-ink"}`}
+          >
             Hidden ({hiddenCount})
           </button>
         )}
@@ -173,13 +199,35 @@ export function RadarView({
         <Lane title="Hidden" items={filtered} {...laneProps} />
       ) : (
         <div className="space-y-8">
-          <Lane title="Act now" items={lanes.act_now} glow empty="Nothing urgent right now. You'll get an email the moment that changes." {...laneProps} />
-          <Lane title={`Coming to ${homeCity}`} items={lanes.home} empty={`No shows announced in ${homeCity} yet.`} {...laneProps} />
-          <Lane title="Elsewhere in India" items={lanes.elsewhere} empty="No shows in other cities right now." {...laneProps} />
+          <Lane
+            title="Act now"
+            items={lanes.act_now}
+            glow
+            empty="Nothing urgent right now. You'll get an email the moment that changes."
+            {...laneProps}
+          />
+          <Lane
+            title={`Coming to ${homeCity}`}
+            items={lanes.home}
+            empty={`No shows announced in ${homeCity} yet.`}
+            {...laneProps}
+          />
+          <Lane
+            title="Elsewhere in India"
+            items={lanes.elsewhere}
+            empty="No shows in other cities right now."
+            {...laneProps}
+          />
         </div>
       )}
 
-      <ShowDrawer showId={openId} seed={seed} initialMode={drawerMode} onClose={() => setOpen(null)} onDecision={onDecision} />
+      <ShowDrawer
+        showId={openId}
+        seed={seed}
+        initialMode={drawerMode}
+        onClose={() => setOpen(null)}
+        onDecision={onDecision}
+      />
     </div>
   );
 }
@@ -189,7 +237,8 @@ function EmptyRadar() {
     <div className="rounded-[18px] border border-line bg-surface p-8 text-center">
       <p className="artist-name text-2xl">All quiet on the radar</p>
       <p className="mx-auto mt-2 max-w-[60ch] text-muted">
-        No India shows announced for your artists right now. The radar checks every 30 minutes and emails you the moment one appears.
+        No India shows announced for your artists right now. The radar checks every 30 minutes and
+        emails you the moment one appears.
       </p>
     </div>
   );
@@ -226,7 +275,13 @@ function Lane({
         <ul className="mt-3 grid gap-3 lg:grid-cols-2">
           {items.map((s) => (
             <li key={s.id}>
-              <ShowCard show={s} glow={glow} onOpen={onOpen} onCheck={onCheck} checking={running && scanningArtistId === s.artist.id} />
+              <ShowCard
+                show={s}
+                glow={glow}
+                onOpen={onOpen}
+                onCheck={onCheck}
+                checking={running && scanningArtistId === s.artist.id}
+              />
             </li>
           ))}
         </ul>
@@ -235,7 +290,15 @@ function Lane({
   );
 }
 
-function MapWithGeocode({ shows, onOpen, onGeocoded }: { shows: ShowWithArtist[]; onOpen: (id: string) => void; onGeocoded: () => void }) {
+function MapWithGeocode({
+  shows,
+  onOpen,
+  onGeocoded,
+}: {
+  shows: ShowWithArtist[];
+  onOpen: (id: string) => void;
+  onGeocoded: () => void;
+}) {
   // First map view: lazily geocode a few venues (server-side 1 req/s throttle), then refresh pins.
   useEffect(() => {
     let alive = true;

@@ -1,4 +1,10 @@
-import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
 import { readEnv } from "./env";
 
 function key(raw = readEnv().TOKEN_ENCRYPTION_KEY): Buffer | null {

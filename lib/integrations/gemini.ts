@@ -22,7 +22,12 @@ function getAi(): GoogleGenAI | null {
   return client.ai;
 }
 
-export type GroundedSource = { uri: string; resolvedUrl: string; domain: string | null; title: string | null };
+export type GroundedSource = {
+  uri: string;
+  resolvedUrl: string;
+  domain: string | null;
+  title: string | null;
+};
 
 type ErrClass =
   | { kind: "daily_quota" }
@@ -35,7 +40,9 @@ export function classifyGeminiError(e: unknown): ErrClass {
   const is429 = status === 429 || /RESOURCE_EXHAUSTED|\b429\b/.test(message);
   if (is429) {
     if (/PerDay|per day|daily/i.test(message)) return { kind: "daily_quota" };
-    const m = /"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/.exec(message) ?? /retry in (\d+(?:\.\d+)?)s/i.exec(message);
+    const m =
+      /"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/.exec(message) ??
+      /retry in (\d+(?:\.\d+)?)s/i.exec(message);
     return { kind: "rate_limited", retryMs: m ? Math.ceil(Number(m[1]) * 1000) : null };
   }
   return { kind: "other", message, status };
@@ -52,7 +59,8 @@ async function withRetries<T>(
   if (budget.quotaExhausted) return fail("quota_exhausted", "Gemini's daily quota is used up.");
   const backoffs = [1000, 3000];
   for (let attempt = 0; attempt <= backoffs.length; attempt++) {
-    if (budget.exhausted) return fail("quota_exhausted", "This run's Gemini call limit was reached.");
+    if (budget.exhausted)
+      return fail("quota_exhausted", "This run's Gemini call limit was reached.");
     budget.calls++;
     await addUsage("gemini", 1);
     const ctl = new AbortController();
@@ -135,7 +143,12 @@ export async function groundedSearch(
     const url = resolved[i];
     if (seen.has(url)) return;
     seen.add(url);
-    sources.push({ uri: w.uri as string, resolvedUrl: url, domain: domainOf(url) ?? w.title ?? null, title: w.title ?? null });
+    sources.push({
+      uri: w.uri as string,
+      resolvedUrl: url,
+      domain: domainOf(url) ?? w.title ?? null,
+      title: w.title ?? null,
+    });
   });
   return ok({ text, sources, latencyMs: r.data.latencyMs });
 }
@@ -192,7 +205,10 @@ export async function ping(): Promise<Result<string>> {
   const ai = getAi();
   if (!ai) return notConfigured("Gemini");
   try {
-    const r = await ai.models.generateContent({ model: readEnv().GEMINI_MODEL, contents: "Reply with the single word: ok" });
+    const r = await ai.models.generateContent({
+      model: readEnv().GEMINI_MODEL,
+      contents: "Reply with the single word: ok",
+    });
     return ok((r.text ?? "").trim().slice(0, 20));
   } catch (e) {
     return fail("upstream_error", errMessage(e).slice(0, 200));

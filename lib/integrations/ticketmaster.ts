@@ -13,24 +13,52 @@ const EventSchema = z
     url: z.string().optional(),
     dates: z
       .object({
-        start: z.object({ localDate: z.string().optional(), localTime: z.string().optional() }).partial().optional(),
+        start: z
+          .object({ localDate: z.string().optional(), localTime: z.string().optional() })
+          .partial()
+          .optional(),
         status: z.object({ code: z.string().optional() }).partial().optional(),
       })
       .partial()
       .optional(),
     sales: z
       .object({
-        public: z.object({ startDateTime: z.string().optional(), endDateTime: z.string().optional() }).partial().optional(),
+        public: z
+          .object({ startDateTime: z.string().optional(), endDateTime: z.string().optional() })
+          .partial()
+          .optional(),
         presales: z
-          .array(z.object({ name: z.string().optional(), startDateTime: z.string().optional(), endDateTime: z.string().optional() }))
+          .array(
+            z.object({
+              name: z.string().optional(),
+              startDateTime: z.string().optional(),
+              endDateTime: z.string().optional(),
+            }),
+          )
           .optional(),
       })
       .partial()
       .optional(),
-    priceRanges: z.array(z.object({ min: z.number().optional(), max: z.number().optional(), currency: z.string().optional() })).optional(),
+    priceRanges: z
+      .array(
+        z.object({
+          min: z.number().optional(),
+          max: z.number().optional(),
+          currency: z.string().optional(),
+        }),
+      )
+      .optional(),
     _embedded: z
       .object({
-        venues: z.array(z.object({ name: z.string().optional(), city: z.object({ name: z.string().optional() }).partial().optional(), state: z.object({ name: z.string().optional() }).partial().optional() })).optional(),
+        venues: z
+          .array(
+            z.object({
+              name: z.string().optional(),
+              city: z.object({ name: z.string().optional() }).partial().optional(),
+              state: z.object({ name: z.string().optional() }).partial().optional(),
+            }),
+          )
+          .optional(),
         attractions: z.array(z.object({ name: z.string().optional() })).optional(),
       })
       .partial()
@@ -39,7 +67,10 @@ const EventSchema = z
   .passthrough();
 
 const ResponseSchema = z.object({
-  _embedded: z.object({ events: z.array(EventSchema).default([]) }).partial().optional(),
+  _embedded: z
+    .object({ events: z.array(EventSchema).default([]) })
+    .partial()
+    .optional(),
 });
 
 export type TmEvent = {
@@ -57,14 +88,20 @@ export type TmEvent = {
 };
 
 /** Pure mapper (unit-tested against a fixture with missing optional fields). */
-export function mapTicketmasterEvents(json: unknown, artistName: string, now: Date = new Date()): TmEvent[] {
+export function mapTicketmasterEvents(
+  json: unknown,
+  artistName: string,
+  now: Date = new Date(),
+): TmEvent[] {
   const parsed = ResponseSchema.safeParse(json);
   if (!parsed.success) return [];
   const events = parsed.data._embedded?.events ?? [];
   const out: TmEvent[] = [];
   for (const e of events) {
     const attractions = e._embedded?.attractions?.map((a) => a.name ?? "") ?? [];
-    const matches = [...attractions, e.name ?? ""].some((n) => n && similarity(n, artistName) >= 0.85);
+    const matches = [...attractions, e.name ?? ""].some(
+      (n) => n && similarity(n, artistName) >= 0.85,
+    );
     if (!matches) continue;
     const venue = e._embedded?.venues?.[0];
     const status = (e.dates?.status?.code ?? "").toLowerCase();
@@ -85,7 +122,10 @@ export function mapTicketmasterEvents(json: unknown, artistName: string, now: Da
         is_early_bird: EARLY_BIRD_RE.test(p.name || "presale"),
       });
     }
-    const min = e.priceRanges?.filter((p) => !p.currency || p.currency.toUpperCase() === "INR").map((p) => p.min).filter((n): n is number => typeof n === "number");
+    const min = e.priceRanges
+      ?.filter((p) => !p.currency || p.currency.toUpperCase() === "INR")
+      .map((p) => p.min)
+      .filter((n): n is number => typeof n === "number");
     const priceMinInr = min && min.length > 0 ? Math.round(Math.min(...min)) : null;
     const pub = e.sales?.public;
     if (pub?.startDateTime) {
@@ -94,7 +134,12 @@ export function mapTicketmasterEvents(json: unknown, artistName: string, now: Da
       tiers.push({
         name: "General",
         price_inr: priceMinInr,
-        status: start.getTime() > now.getTime() ? "upcoming" : end && end.getTime() <= now.getTime() ? "unknown" : "on_sale",
+        status:
+          start.getTime() > now.getTime()
+            ? "upcoming"
+            : end && end.getTime() <= now.getTime()
+              ? "unknown"
+              : "on_sale",
         sale_start: pub.startDateTime,
         sale_end: pub.endDateTime ?? null,
         is_early_bird: false,

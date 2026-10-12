@@ -14,9 +14,19 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const show = await getShow(id);
   if (!show) return apiError("not_found", "That show doesn't exist.", 404);
   const [{ data: changes }, { data: events }, google] = await Promise.all([
-    db.from("show_changes").select("id, change_type, before, after, created_at").eq("show_id", id).order("created_at", { ascending: false }).limit(30),
+    db
+      .from("show_changes")
+      .select("id, change_type, before, after, created_at")
+      .eq("show_id", id)
+      .order("created_at", { ascending: false })
+      .limit(30),
     db.from("calendar_events").select("kind, html_link, google_event_id").eq("show_id", id),
     getOAuthState("google"),
   ]);
-  return NextResponse.json({ show, changes: changes ?? [], calendarEvents: events ?? [], googleConnected: google.connected });
+  return NextResponse.json({
+    show,
+    changes: changes ?? [],
+    calendarEvents: events ?? [],
+    googleConnected: google.connected,
+  });
 }

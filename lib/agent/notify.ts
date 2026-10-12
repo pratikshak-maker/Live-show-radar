@@ -37,12 +37,21 @@ export async function notify(db: SupabaseClient, changeIds: string[]): Promise<n
     .from("show_changes")
     .select("id, show_id, change_type, show:shows(is_sample, confidence)")
     .in("id", changeIds);
-  const rows = ((data ?? []) as unknown as ChangeRow[]).filter((r) => ALERT_WORTHY.has(r.change_type) && r.show && !r.show.is_sample);
+  const rows = ((data ?? []) as unknown as ChangeRow[]).filter(
+    (r) => ALERT_WORTHY.has(r.change_type) && r.show && !r.show.is_sample,
+  );
   if (rows.length === 0) return 0;
 
   const now = new Date().toISOString();
   await db.from("alerts").upsert(
-    rows.map((r) => ({ show_id: r.show_id, change_id: r.id, channel: "in_app", alert_type: r.change_type, status: "sent", sent_at: now })),
+    rows.map((r) => ({
+      show_id: r.show_id,
+      change_id: r.id,
+      channel: "in_app",
+      alert_type: r.change_type,
+      status: "sent",
+      sent_at: now,
+    })),
     { onConflict: "show_id,alert_type,channel", ignoreDuplicates: true },
   );
 
@@ -76,7 +85,10 @@ export async function notify(db: SupabaseClient, changeIds: string[]): Promise<n
   });
   if (items.length === 0) return 0;
 
-  const { count } = await db.from("artists").select("id", { count: "exact", head: true }).eq("is_active", true);
+  const { count } = await db
+    .from("artists")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true);
   const content = buildEmail(items, { appUrl: readEnv().APP_URL, artistCount: count ?? 0 });
   const sent = await sendAlertEmail(content);
 
@@ -89,7 +101,11 @@ export async function notify(db: SupabaseClient, changeIds: string[]): Promise<n
       channel,
       alert_type: r.change_type,
       status,
-      error: sent.ok ? null : sent.reason === "not_configured" ? "not_configured" : sent.message.slice(0, 200),
+      error: sent.ok
+        ? null
+        : sent.reason === "not_configured"
+          ? "not_configured"
+          : sent.message.slice(0, 200),
       sent_at: sent.ok ? now : null,
     })),
     { onConflict: "show_id,alert_type,channel" },

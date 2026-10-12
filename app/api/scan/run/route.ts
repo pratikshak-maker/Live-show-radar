@@ -13,7 +13,13 @@ const Schema = z.object({ artistId: z.string().regex(UUID).optional() });
 async function activeRunId(): Promise<string | null> {
   const db = getDb();
   if (!db) return null;
-  const { data } = await db.from("scan_runs").select("id").eq("status", "running").order("started_at", { ascending: false }).limit(1).maybeSingle();
+  const { data } = await db
+    .from("scan_runs")
+    .select("id")
+    .eq("status", "running")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
   return (data?.id as string | undefined) ?? null;
 }
 
@@ -23,14 +29,21 @@ export async function POST(req: Request) {
   if (!body.ok) return body.res;
   const { artistId } = body.data;
 
-  const rl = artistId ? await rateLimit("scan_artist", artistId) : await rateLimit("scan_manual", "global");
+  const rl = artistId
+    ? await rateLimit("scan_artist", artistId)
+    : await rateLimit("scan_manual", "global");
   if (!rl.allowed) {
     const active = await activeRunId();
     if (active) return NextResponse.json({ runId: active, attached: true });
-    return apiError("rate_limited", "Just checked — the next check is available shortly.", 429, { retryAfterSeconds: rl.retryAfterSeconds });
+    return apiError("rate_limited", "Just checked — the next check is available shortly.", 429, {
+      retryAfterSeconds: rl.retryAfterSeconds,
+    });
   }
 
-  const started = await startScan(artistId ? "artist" : "manual", artistId ? [artistId] : undefined);
+  const started = await startScan(
+    artistId ? "artist" : "manual",
+    artistId ? [artistId] : undefined,
+  );
   if (started.status === "busy") {
     if (started.runId) return NextResponse.json({ runId: started.runId, attached: true });
     return apiError("busy", "A check is already running. Try again in a moment.", 409);

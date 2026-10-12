@@ -11,12 +11,24 @@ export type StoredTokens = {
 
 export async function saveTokens(
   provider: "google" | "spotify",
-  t: { email?: string | null; scopes?: string[]; refreshToken?: string | null; accessToken?: string | null; expiresAt?: Date | null },
+  t: {
+    email?: string | null;
+    scopes?: string[];
+    refreshToken?: string | null;
+    accessToken?: string | null;
+    expiresAt?: Date | null;
+  },
 ): Promise<boolean> {
   const db = getDb();
   if (!db || !encryptionAvailable()) return false;
-  const { data: prev } = await db.from("oauth_tokens").select("refresh_token_enc, account_email, scopes").eq("provider", provider).maybeSingle();
-  const refreshEnc = t.refreshToken ? encrypt(t.refreshToken) : (prev?.refresh_token_enc as string | undefined);
+  const { data: prev } = await db
+    .from("oauth_tokens")
+    .select("refresh_token_enc, account_email, scopes")
+    .eq("provider", provider)
+    .maybeSingle();
+  const refreshEnc = t.refreshToken
+    ? encrypt(t.refreshToken)
+    : (prev?.refresh_token_enc as string | undefined);
   if (!refreshEnc) return false;
   const { error } = await db.from("oauth_tokens").upsert(
     {
@@ -30,7 +42,10 @@ export async function saveTokens(
     },
     { onConflict: "provider" },
   );
-  if (!error) await db.from("settings").upsert({ key: `${provider}_needs_reconnect`, value: false }, { onConflict: "key" });
+  if (!error)
+    await db
+      .from("settings")
+      .upsert({ key: `${provider}_needs_reconnect`, value: false }, { onConflict: "key" });
   return !error;
 }
 
@@ -62,5 +77,7 @@ export async function deleteTokens(provider: "google" | "spotify"): Promise<void
 export async function markNeedsReconnect(provider: "google" | "spotify"): Promise<void> {
   const db = getDb();
   if (!db) return;
-  await db.from("settings").upsert({ key: `${provider}_needs_reconnect`, value: true }, { onConflict: "key" });
+  await db
+    .from("settings")
+    .upsert({ key: `${provider}_needs_reconnect`, value: true }, { onConflict: "key" });
 }

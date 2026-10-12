@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 
-export function apiError(code: string, message: string, status = 400, extra?: Record<string, unknown>) {
+export function apiError(
+  code: string,
+  message: string,
+  status = 400,
+  extra?: Record<string, unknown>,
+) {
   return NextResponse.json({ error: { code, message }, ...extra }, { status });
 }
 

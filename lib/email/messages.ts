@@ -1,7 +1,12 @@
 import { fmtDay } from "../time";
 
 /** One-line in-app alert copy by change type. */
-export function alertMessage(type: string, artist: string, city: string, startDate: string): string {
+export function alertMessage(
+  type: string,
+  artist: string,
+  city: string,
+  startDate: string,
+): string {
   const when = fmtDay(startDate);
   switch (type) {
     case "new_show":

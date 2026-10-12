@@ -20,10 +20,14 @@ export async function POST(req: Request) {
   if (!body.ok) return body.res;
   const env = readEnv();
   const homeCity = await getHomeCity();
-  if (!env.GEMINI_API_KEY) return NextResponse.json({ answer: null, reason: "not_configured", shows: [] });
+  if (!env.GEMINI_API_KEY)
+    return NextResponse.json({ answer: null, reason: "not_configured", shows: [] });
 
   const rl = await rateLimit("ask", rateLimitScopeForRequest(req));
-  if (!rl.allowed) return apiError("rate_limited", "You've asked a lot this hour — try again soon.", 429, { retryAfterSeconds: rl.retryAfterSeconds });
+  if (!rl.allowed)
+    return apiError("rate_limited", "You've asked a lot this hour — try again soon.", 429, {
+      retryAfterSeconds: rl.retryAfterSeconds,
+    });
 
   const shows = (await listShows()).filter((s) => !s.is_sample).slice(0, 150);
   const compact = shows.map((s) => ({
@@ -45,6 +49,9 @@ export async function POST(req: Request) {
   const r = await generateJson(prompt, GEMINI_ASK_SCHEMA, AskSchema, new GeminiBudget(3));
   if (!r.ok) return NextResponse.json({ answer: null, reason: "unavailable", shows: [] });
   const known = new Map(shows.map((s) => [s.id, s]));
-  const matched = r.data.data.show_ids.filter((id) => known.has(id)).slice(0, 8).map((id) => known.get(id)!);
+  const matched = r.data.data.show_ids
+    .filter((id) => known.has(id))
+    .slice(0, 8)
+    .map((id) => known.get(id)!);
   return NextResponse.json({ answer: r.data.data.answer, shows: matched });
 }

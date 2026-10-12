@@ -3,10 +3,16 @@ import { toGoogleEvent, type CalEvent } from "../calendar-build";
 import { fail, ok, type Result } from "../result";
 import { withGoogle } from "./google-oauth";
 
-export async function createCalendarEvent(e: CalEvent, sourceUrl: string): Promise<Result<{ id: string; htmlLink: string | null }>> {
+export async function createCalendarEvent(
+  e: CalEvent,
+  sourceUrl: string,
+): Promise<Result<{ id: string; htmlLink: string | null }>> {
   const r = await withGoogle(async (auth) => {
     const cal = google.calendar({ version: "v3", auth });
-    const res = await cal.events.insert({ calendarId: "primary", requestBody: toGoogleEvent(e, sourceUrl) });
+    const res = await cal.events.insert({
+      calendarId: "primary",
+      requestBody: toGoogleEvent(e, sourceUrl),
+    });
     return { id: res.data.id ?? "", htmlLink: res.data.htmlLink ?? null };
   });
   if (!r.ok) return r;

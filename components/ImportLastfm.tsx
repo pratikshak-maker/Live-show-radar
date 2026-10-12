@@ -45,7 +45,10 @@ export function ImportLastfm({ onDone }: { onDone: () => void }) {
         body: JSON.stringify({ username: user, confirm: [...checked] }),
       });
       const body = (await res.json()) as { added?: number };
-      push({ title: `Added ${body.added ?? 0} artists`, description: "They'll be checked in the next few scans." });
+      push({
+        title: `Added ${body.added ?? 0} artists`,
+        description: "They'll be checked in the next few scans.",
+      });
       setOpen(false);
       setRows(null);
       onDone();
@@ -59,12 +62,19 @@ export function ImportLastfm({ onDone }: { onDone: () => void }) {
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
-        <button type="button" className="inline-flex min-h-11 items-center rounded-[12px] border border-line px-4 text-sm font-medium hover:bg-surface">
+        <button
+          type="button"
+          className="inline-flex min-h-11 items-center rounded-[12px] border border-line px-4 text-sm font-medium hover:bg-surface"
+        >
           Import from Last.fm
         </button>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Content align="start" sideOffset={8} className="z-50 w-[min(92vw,360px)] rounded-[18px] border border-line bg-raised p-4">
+        <Popover.Content
+          align="start"
+          sideOffset={8}
+          className="z-50 w-[min(92vw,360px)] rounded-[18px] border border-line bg-raised p-4"
+        >
           {!rows ? (
             <form
               onSubmit={(e) => {
@@ -93,11 +103,15 @@ export function ImportLastfm({ onDone }: { onDone: () => void }) {
             </form>
           ) : (
             <div>
-              <p className="text-sm text-muted">{fresh.length} new artists from the last 12 months.</p>
+              <p className="text-sm text-muted">
+                {fresh.length} new artists from the last 12 months.
+              </p>
               <ul className="mt-2 max-h-64 overflow-y-auto">
                 {rows.map((r) => (
                   <li key={r.name}>
-                    <label className={`flex min-h-10 items-center gap-2 px-1 text-sm ${r.alreadyTracked ? "text-muted" : ""}`}>
+                    <label
+                      className={`flex min-h-10 items-center gap-2 px-1 text-sm ${r.alreadyTracked ? "text-muted" : ""}`}
+                    >
                       <input
                         type="checkbox"
                         disabled={r.alreadyTracked}

@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const secret = readEnv().CRON_SECRET;
   if (!secret) return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 503 });
-  if (req.headers.get("authorization") !== `Bearer ${secret}`) return apiError("unauthorized", "Unauthorized", 401);
+  if (req.headers.get("authorization") !== `Bearer ${secret}`)
+    return apiError("unauthorized", "Unauthorized", 401);
   const db = getDb();
   if (!db) return apiError("db_not_configured", "Database not connected.", 503);
 

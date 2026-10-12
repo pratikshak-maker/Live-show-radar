@@ -37,11 +37,16 @@ export function toBase64Url(raw: string): string {
 }
 
 /** Sends through the Gmail API as the connected account (gmail.send scope). */
-export async function sendViaGmail(m: Omit<MailMessage, "from">): Promise<Result<{ from: string }>> {
+export async function sendViaGmail(
+  m: Omit<MailMessage, "from">,
+): Promise<Result<{ from: string }>> {
   const r = await withGoogle(async (auth, email) => {
     const from = email ?? "me";
     const gmail = google.gmail({ version: "v1", auth });
-    await gmail.users.messages.send({ userId: "me", requestBody: { raw: toBase64Url(buildMime({ ...m, from })) } });
+    await gmail.users.messages.send({
+      userId: "me",
+      requestBody: { raw: toBase64Url(buildMime({ ...m, from })) },
+    });
     return { from };
   });
   return r.ok ? ok(r.data) : r;

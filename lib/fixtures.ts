@@ -47,32 +47,75 @@ export function fixtureShow(over: Partial<ShowWithArtist> & { name: string }): S
 
 /** Dev-only fixtures for /dev/cards: one card per stub state. */
 export function cardFixtures(): { label: string; show: ShowWithArtist; glow?: boolean }[] {
-  return [
-    { label: "Early bird open", glow: true, show: fixtureShow({ name: "Prateek Kuhad", early_bird_deadline: hours(5.2) }) },
+  const list = [
+    {
+      label: "Early bird open",
+      glow: true,
+      show: fixtureShow({ name: "Prateek Kuhad", early_bird_deadline: hours(5.2) }),
+    },
     {
       label: "Closing soon (<48h, pulses)",
       glow: true,
-      show: fixtureShow({ name: "Cigarettes After Sex", early_bird_status: "closing_soon", early_bird_deadline: hours(20), city: "Mumbai", is_home_city: false, venue_name: "Jio World Garden" }),
+      show: fixtureShow({
+        name: "Cigarettes After Sex",
+        early_bird_status: "closing_soon",
+        early_bird_deadline: hours(20),
+        city: "Mumbai",
+        is_home_city: false,
+        venue_name: "Jio World Garden",
+      }),
     },
     {
       label: "Imminent",
-      show: fixtureShow({ name: "Khruangbin", early_bird_status: "imminent", early_bird_deadline: hours(52) }),
+      show: fixtureShow({
+        name: "Khruangbin",
+        early_bird_status: "imminent",
+        early_bird_deadline: hours(52),
+      }),
     },
     {
       label: "Sold out",
-      show: fixtureShow({ name: "Anuv Jain", early_bird_status: "sold_out", early_bird_deadline: null }),
+      show: fixtureShow({
+        name: "Anuv Jain",
+        early_bird_status: "sold_out",
+        early_bird_deadline: null,
+      }),
     },
     {
       label: "Unknown tiers + Unverified",
-      show: fixtureShow({ name: "Parvaaz", early_bird_status: "unknown", early_bird_deadline: null, confidence: 0.45, price_min_inr: null, city: "Delhi NCR", is_home_city: false }),
+      show: fixtureShow({
+        name: "Parvaaz",
+        early_bird_status: "unknown",
+        early_bird_deadline: null,
+        confidence: 0.45,
+        price_min_inr: null,
+        city: "Delhi NCR",
+        is_home_city: false,
+      }),
     },
     {
       label: "Not offered (general sale)",
-      show: fixtureShow({ name: "The Local Train", early_bird_status: "not_offered", early_bird_deadline: null, confidence: 0.7 }),
+      show: fixtureShow({
+        name: "The Local Train",
+        early_bird_status: "not_offered",
+        early_bird_deadline: null,
+        confidence: 0.7,
+      }),
     },
     {
       label: "Sample",
-      show: fixtureShow({ name: "Bonobo", is_sample: true, early_bird_status: "unknown", early_bird_deadline: null, confidence: 0.5 }),
+      show: fixtureShow({
+        name: "Bonobo",
+        is_sample: true,
+        early_bird_status: "unknown",
+        early_bird_deadline: null,
+        confidence: 0.5,
+      }),
     },
   ];
+  // Stable ids so deep links survive server re-renders in dev.
+  return list.map((c, i) => ({
+    ...c,
+    show: { ...c.show, id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}` },
+  }));
 }

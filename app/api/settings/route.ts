@@ -30,7 +30,10 @@ const Patch = z.object({
   alert_email: z.string().email().max(200).or(z.literal("")).optional(),
   email_alerts_enabled: z.boolean().optional(),
   min_confidence_for_email: z.number().min(0).max(1).optional(),
-  home_city: z.string().refine((c) => c in CITIES, "Unknown city").optional(),
+  home_city: z
+    .string()
+    .refine((c) => c in CITIES, "Unknown city")
+    .optional(),
 });
 
 export async function PATCH(req: Request) {

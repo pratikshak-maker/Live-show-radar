@@ -106,7 +106,10 @@ export type LaneInput = {
 
 /** "Act now": early bird open/closing_soon/imminent with a deadline in the next 7 days. */
 export function laneFor(s: LaneInput, now: Date = new Date()): Lane {
-  const urgent = s.early_bird_status === "open" || s.early_bird_status === "closing_soon" || s.early_bird_status === "imminent";
+  const urgent =
+    s.early_bird_status === "open" ||
+    s.early_bird_status === "closing_soon" ||
+    s.early_bird_status === "imminent";
   if (urgent && s.early_bird_deadline) {
     const dl = new Date(s.early_bird_deadline).getTime();
     if (dl > now.getTime() && dl - now.getTime() <= 7 * 24 * HOUR) return "act_now";

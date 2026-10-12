@@ -42,30 +42,94 @@ export function getConfiguredMap(): Record<IntegrationKey, IntegrationStatus> {
   ): IntegrationStatus => ({ key, label, configured, required, purpose, setupDocAnchor });
 
   return {
-    database: mk("database", "Database", Boolean(e.SUPABASE_URL && e.SUPABASE_SERVICE_ROLE_KEY), true,
-      "Stores your artists, shows and alerts.", "supabase"),
-    gemini: mk("gemini", "Gemini AI", Boolean(e.GEMINI_API_KEY), true,
-      "Searches the web for announcements and turns pages into structured show details.", "gemini"),
-    scrapingbee: mk("scrapingbee", "Live ticket pages", Boolean(e.SCRAPINGBEE_API_KEY), false,
-      "Reads ticketing pages for early-bird tiers and deadlines (ScrapingBee).", "scrapingbee"),
-    googleOAuth: mk("googleOAuth",
+    database: mk(
+      "database",
+      "Database",
+      Boolean(e.SUPABASE_URL && e.SUPABASE_SERVICE_ROLE_KEY),
+      true,
+      "Stores your artists, shows and alerts.",
+      "supabase",
+    ),
+    gemini: mk(
+      "gemini",
+      "Gemini AI",
+      Boolean(e.GEMINI_API_KEY),
+      true,
+      "Searches the web for announcements and turns pages into structured show details.",
+      "gemini",
+    ),
+    scrapingbee: mk(
+      "scrapingbee",
+      "Live ticket pages",
+      Boolean(e.SCRAPINGBEE_API_KEY),
+      false,
+      "Reads ticketing pages for early-bird tiers and deadlines (ScrapingBee).",
+      "scrapingbee",
+    ),
+    googleOAuth: mk(
+      "googleOAuth",
       "Gmail alerts & Calendar",
-      Boolean(e.GOOGLE_CLIENT_ID && e.GOOGLE_CLIENT_SECRET && encryptionAvailable()), false,
-      "Connect Google to get email alerts and add shows to your calendar.", "google-cloud"),
-    gmailSmtp: mk("gmailSmtp", "Gmail SMTP fallback", Boolean(e.GMAIL_SMTP_USER && e.GMAIL_SMTP_APP_PASSWORD), false,
-      "Sends alert emails with an app password if Google isn't connected.", "gmail-smtp-fallback"),
-    ticketmaster: mk("ticketmaster", "Ticketmaster", Boolean(e.TICKETMASTER_API_KEY), false,
-      "An extra source for official event listings.", "ticketmaster"),
-    spotify: mk("spotify", "Spotify", Boolean(e.SPOTIFY_CLIENT_ID && e.SPOTIFY_CLIENT_SECRET), false,
-      "Imports the artists you follow (only for accounts the app owner has added).", "spotify"),
-    lastfm: mk("lastfm", "Last.fm", Boolean(e.LASTFM_API_KEY), false,
-      "Imports your top artists from a Last.fm username.", "lastfm"),
-    musicbrainz: mk("musicbrainz", "MusicBrainz", true, false,
-      "Artist search and disambiguation. No key needed.", "no-key-sources"),
-    deezer: mk("deezer", "Deezer images", true, false,
-      "Artist photos. No key needed.", "no-key-sources"),
-    nominatim: mk("nominatim", "OpenStreetMap", true, false,
-      "Venue locations for the map. No key needed.", "no-key-sources"),
+      Boolean(e.GOOGLE_CLIENT_ID && e.GOOGLE_CLIENT_SECRET && encryptionAvailable()),
+      false,
+      "Connect Google to get email alerts and add shows to your calendar.",
+      "google-cloud",
+    ),
+    gmailSmtp: mk(
+      "gmailSmtp",
+      "Gmail SMTP fallback",
+      Boolean(e.GMAIL_SMTP_USER && e.GMAIL_SMTP_APP_PASSWORD),
+      false,
+      "Sends alert emails with an app password if Google isn't connected.",
+      "gmail-smtp-fallback",
+    ),
+    ticketmaster: mk(
+      "ticketmaster",
+      "Ticketmaster",
+      Boolean(e.TICKETMASTER_API_KEY),
+      false,
+      "An extra source for official event listings.",
+      "ticketmaster",
+    ),
+    spotify: mk(
+      "spotify",
+      "Spotify",
+      Boolean(e.SPOTIFY_CLIENT_ID && e.SPOTIFY_CLIENT_SECRET),
+      false,
+      "Imports the artists you follow (only for accounts the app owner has added).",
+      "spotify",
+    ),
+    lastfm: mk(
+      "lastfm",
+      "Last.fm",
+      Boolean(e.LASTFM_API_KEY),
+      false,
+      "Imports your top artists from a Last.fm username.",
+      "lastfm",
+    ),
+    musicbrainz: mk(
+      "musicbrainz",
+      "MusicBrainz",
+      true,
+      false,
+      "Artist search and disambiguation. No key needed.",
+      "no-key-sources",
+    ),
+    deezer: mk(
+      "deezer",
+      "Deezer images",
+      true,
+      false,
+      "Artist photos. No key needed.",
+      "no-key-sources",
+    ),
+    nominatim: mk(
+      "nominatim",
+      "OpenStreetMap",
+      true,
+      false,
+      "Venue locations for the map. No key needed.",
+      "no-key-sources",
+    ),
   };
 }
 
@@ -78,9 +142,17 @@ export async function getOAuthState(provider: "google" | "spotify"): Promise<OAu
     .eq("provider", provider)
     .maybeSingle();
   if (!data) return { connected: false, needsReconnect: false, email: null };
-  const { data: flag } = await db.from("settings").select("value").eq("key", `${provider}_needs_reconnect`).maybeSingle();
+  const { data: flag } = await db
+    .from("settings")
+    .select("value")
+    .eq("key", `${provider}_needs_reconnect`)
+    .maybeSingle();
   const needs = flag?.value === true;
-  return { connected: !needs, needsReconnect: needs, email: (data.account_email as string | null) ?? null };
+  return {
+    connected: !needs,
+    needsReconnect: needs,
+    email: (data.account_email as string | null) ?? null,
+  };
 }
 
 /** Full status incl. stored OAuth tokens. */

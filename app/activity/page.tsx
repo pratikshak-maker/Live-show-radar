@@ -10,14 +10,22 @@ export default async function ActivityPage() {
   if (!dbConfigured()) return <SetupScreen />;
   const db = getDb();
   const [{ data }, gemini, sb] = await Promise.all([
-    db!.from("scan_runs").select("id, trigger, status, artist_ids, stats, error, started_at, finished_at").order("started_at", { ascending: false }).limit(20),
+    db!
+      .from("scan_runs")
+      .select("id, trigger, status, artist_ids, stats, error, started_at, finished_at")
+      .order("started_at", { ascending: false })
+      .limit(20),
     getUsageToday("gemini"),
     getUsageToday("scrapingbee"),
   ]);
   return (
     <ActivityView
       runs={(data ?? []) as RunSummary[]}
-      usage={{ gemini, scrapingbee: sb, scrapingbeeBudget: readEnv().SCRAPINGBEE_DAILY_CREDIT_BUDGET }}
+      usage={{
+        gemini,
+        scrapingbee: sb,
+        scrapingbeeBudget: readEnv().SCRAPINGBEE_DAILY_CREDIT_BUDGET,
+      }}
     />
   );
 }

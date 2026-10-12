@@ -194,11 +194,17 @@ export function dedupeKey(artistName: string, citySlugValue: string, startDate: 
 }
 
 export function venueKey(venue: string, city: string): string {
-  return `${venue.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()}|${citySlug(city)}`;
+  return `${venue
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()}|${citySlug(city)}`;
 }
 
 export function monogram(name: string): string {
-  const words = name.replace(/^the\s+/i, "").split(/\s+/).filter(Boolean);
+  const words = name
+    .replace(/^the\s+/i, "")
+    .split(/\s+/)
+    .filter(Boolean);
   return words
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? "")

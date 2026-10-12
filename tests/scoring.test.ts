@@ -20,7 +20,14 @@ const eb = (over: Partial<Tier> = {}): Tier => ({
   is_early_bird: true,
   ...over,
 });
-const ga: Tier = { name: "GA", price_inr: 1999, status: "on_sale", sale_start: null, sale_end: null, is_early_bird: false };
+const ga: Tier = {
+  name: "GA",
+  price_inr: 1999,
+  status: "on_sale",
+  sale_start: null,
+  sale_end: null,
+  is_early_bird: false,
+};
 
 describe("deriveEarlyBird", () => {
   it("unknown when no tier data at all", () => {
@@ -70,9 +77,15 @@ describe("deriveEarlyBird", () => {
 
 describe("confidenceScore", () => {
   it("starts at 0.4 and caps at 1", () => {
-    expect(confidenceScore({ ticketingConfirmed: false, secondSourceAgrees: false, hasVenue: false })).toBe(0.4);
-    expect(confidenceScore({ ticketingConfirmed: true, secondSourceAgrees: true, hasVenue: true })).toBe(1);
-    expect(confidenceScore({ ticketingConfirmed: true, secondSourceAgrees: false, hasVenue: true })).toBe(0.8);
+    expect(
+      confidenceScore({ ticketingConfirmed: false, secondSourceAgrees: false, hasVenue: false }),
+    ).toBe(0.4);
+    expect(
+      confidenceScore({ ticketingConfirmed: true, secondSourceAgrees: true, hasVenue: true }),
+    ).toBe(1);
+    expect(
+      confidenceScore({ ticketingConfirmed: true, secondSourceAgrees: false, hasVenue: true }),
+    ).toBe(0.8);
   });
   it("labels", () => {
     expect(confidenceLabel(0.8)).toBe("Confirmed");
@@ -82,7 +95,13 @@ describe("confidenceScore", () => {
 });
 
 describe("priorityScore", () => {
-  const base = { isHomeCity: true, earlyBird: "open" as const, firstSeenAt: h(-100), isFavorite: false, confidence: 1 };
+  const base = {
+    isHomeCity: true,
+    earlyBird: "open" as const,
+    firstSeenAt: h(-100),
+    isFavorite: false,
+    confidence: 1,
+  };
   it("home + open + full confidence", () => {
     expect(priorityScore(base, NOW)).toBe(80);
   });
@@ -90,16 +109,40 @@ describe("priorityScore", () => {
     expect(priorityScore({ ...base, firstSeenAt: h(-2), isFavorite: true }, NOW)).toBe(110);
   });
   it("other city is lower, confidence multiplies", () => {
-    expect(priorityScore({ ...base, isHomeCity: false, earlyBird: "closing_soon", confidence: 0.5 }, NOW)).toBe(45);
+    expect(
+      priorityScore(
+        { ...base, isHomeCity: false, earlyBird: "closing_soon", confidence: 0.5 },
+        NOW,
+      ),
+    ).toBe(45);
   });
 });
 
 describe("laneFor", () => {
   it("act_now needs an urgent status and a deadline within 7 days", () => {
-    expect(laneFor({ early_bird_status: "open", early_bird_deadline: h(24), is_home_city: false }, NOW)).toBe("act_now");
-    expect(laneFor({ early_bird_status: "open", early_bird_deadline: h(24 * 8), is_home_city: true }, NOW)).toBe("home");
-    expect(laneFor({ early_bird_status: "open", early_bird_deadline: null, is_home_city: true }, NOW)).toBe("home");
-    expect(laneFor({ early_bird_status: "sold_out", early_bird_deadline: h(5), is_home_city: false }, NOW)).toBe("elsewhere");
-    expect(laneFor({ early_bird_status: "imminent", early_bird_deadline: h(5), is_home_city: false }, NOW)).toBe("act_now");
+    expect(
+      laneFor({ early_bird_status: "open", early_bird_deadline: h(24), is_home_city: false }, NOW),
+    ).toBe("act_now");
+    expect(
+      laneFor(
+        { early_bird_status: "open", early_bird_deadline: h(24 * 8), is_home_city: true },
+        NOW,
+      ),
+    ).toBe("home");
+    expect(
+      laneFor({ early_bird_status: "open", early_bird_deadline: null, is_home_city: true }, NOW),
+    ).toBe("home");
+    expect(
+      laneFor(
+        { early_bird_status: "sold_out", early_bird_deadline: h(5), is_home_city: false },
+        NOW,
+      ),
+    ).toBe("elsewhere");
+    expect(
+      laneFor(
+        { early_bird_status: "imminent", early_bird_deadline: h(5), is_home_city: false },
+        NOW,
+      ),
+    ).toBe("act_now");
   });
 });

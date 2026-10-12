@@ -29,9 +29,19 @@ function Fit({ pins }: { pins: Pin[] }) {
   return null;
 }
 
-export default function MapView({ shows, onOpen }: { shows: ShowWithArtist[]; onOpen: (id: string) => void }) {
+export default function MapView({
+  shows,
+  onOpen,
+}: {
+  shows: ShowWithArtist[];
+  onOpen: (id: string) => void;
+}) {
   const colors = useMemo(
-    () => ({ act_now: cssVar("--stage", "#ff4f8b"), home: cssVar("--confirmed", "#5be3b6"), elsewhere: cssVar("--text-muted", "#a99bc9") }),
+    () => ({
+      act_now: cssVar("--stage", "#ff4f8b"),
+      home: cssVar("--confirmed", "#5be3b6"),
+      elsewhere: cssVar("--text-muted", "#a99bc9"),
+    }),
     [],
   );
   const pins = useMemo<Pin[]>(() => {
@@ -46,12 +56,29 @@ export default function MapView({ shows, onOpen }: { shows: ShowWithArtist[]; on
   }, [shows]);
 
   return (
-    <div className="h-[60vh] min-h-[360px] overflow-hidden rounded-[18px] border border-line" role="region" aria-label="Map of upcoming shows">
+    <div
+      className="h-[60vh] min-h-[360px] overflow-hidden rounded-[18px] border border-line"
+      role="region"
+      aria-label="Map of upcoming shows"
+    >
       <MapContainer center={[22.5, 79]} zoom={5} scrollWheelZoom className="h-full w-full">
-        <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
         <Fit pins={pins} />
         {pins.map((p) => (
-          <CircleMarker key={p.show.id} center={[p.lat, p.lng]} radius={10} pathOptions={{ color: colors[p.lane], fillColor: colors[p.lane], fillOpacity: 0.75, weight: 2 }}>
+          <CircleMarker
+            key={p.show.id}
+            center={[p.lat, p.lng]}
+            radius={10}
+            pathOptions={{
+              color: colors[p.lane],
+              fillColor: colors[p.lane],
+              fillOpacity: 0.75,
+              weight: 2,
+            }}
+          >
             <Popup>
               <div className="min-w-[160px]">
                 <p className="artist-name text-base">{p.show.artist.name}</p>
@@ -60,7 +87,11 @@ export default function MapView({ shows, onOpen }: { shows: ShowWithArtist[]; on
                   {p.show.city}
                 </p>
                 <p className="text-sm">{fmtDay(p.show.start_date)}</p>
-                <button type="button" onClick={() => onOpen(p.show.id)} className="mt-2 min-h-9 rounded-[10px] bg-stage px-3 text-sm font-medium text-stage-ink">
+                <button
+                  type="button"
+                  onClick={() => onOpen(p.show.id)}
+                  className="mt-2 min-h-9 rounded-[10px] bg-stage px-3 text-sm font-medium text-stage-ink"
+                >
                   Open
                 </button>
               </div>

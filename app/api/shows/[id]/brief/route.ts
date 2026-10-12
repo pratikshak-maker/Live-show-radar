@@ -43,14 +43,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     today,
   };
   const hash = createHash("sha256").update(JSON.stringify(fields)).digest("hex");
-  if (show.ai_brief && show.ai_brief_hash === hash) return NextResponse.json({ brief: show.ai_brief, cached: true });
+  if (show.ai_brief && show.ai_brief_hash === hash)
+    return NextResponse.json({ brief: show.ai_brief, cached: true });
   if (!env.GEMINI_API_KEY) return NextResponse.json({ brief: null, reason: "not_configured" });
   if (show.is_sample) return NextResponse.json({ brief: null, reason: "sample" });
 
   const rl = await rateLimit("brief", rateLimitScopeForRequest(req));
   if (!rl.allowed) {
     if (show.ai_brief) return NextResponse.json({ brief: show.ai_brief, cached: true });
-    return apiError("rate_limited", "Too many briefs this hour.", 429, { retryAfterSeconds: rl.retryAfterSeconds });
+    return apiError("rate_limited", "Too many briefs this hour.", 429, {
+      retryAfterSeconds: rl.retryAfterSeconds,
+    });
   }
 
   const { count } = await db
@@ -70,7 +73,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const r = await generateJson(prompt, GEMINI_BRIEF_SCHEMA, BriefSchema, new GeminiBudget(3));
   if (!r.ok) {
     if (show.ai_brief) return NextResponse.json({ brief: show.ai_brief, cached: true });
-    return NextResponse.json({ brief: null, reason: r.reason === "not_configured" ? "not_configured" : "unavailable" });
+    return NextResponse.json({
+      brief: null,
+      reason: r.reason === "not_configured" ? "not_configured" : "unavailable",
+    });
   }
   const brief = r.data.data;
   await db.from("shows").update({ ai_brief: brief, ai_brief_hash: hash }).eq("id", id);

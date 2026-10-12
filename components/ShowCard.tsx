@@ -28,7 +28,14 @@ export function stubModel(
     case "closing_soon": {
       const left = dl ? countdownParts(dl, now) : null;
       if (dl && !left) {
-        return { heading: "Early bird", big: "Ended", sub: null, tone: "muted", pulse: false, needsCheck: true };
+        return {
+          heading: "Early bird",
+          big: "Ended",
+          sub: null,
+          tone: "muted",
+          pulse: false,
+          needsCheck: true,
+        };
       }
       return {
         heading: "Early bird",
@@ -51,9 +58,23 @@ export function stubModel(
       };
     }
     case "sold_out":
-      return { heading: "Early bird", big: "Sold out", sub: null, tone: "muted", pulse: false, needsCheck: false };
+      return {
+        heading: "Early bird",
+        big: "Sold out",
+        sub: null,
+        tone: "muted",
+        pulse: false,
+        needsCheck: false,
+      };
     case "not_offered":
-      return { heading: "General sale", big: "No early bird", sub: null, tone: "muted", pulse: false, needsCheck: false };
+      return {
+        heading: "General sale",
+        big: "No early bird",
+        sub: null,
+        tone: "muted",
+        pulse: false,
+        needsCheck: false,
+      };
     default:
       return {
         heading: "Ticket tiers",
@@ -83,7 +104,9 @@ export function ShowCard({
   const stub = stubModel(show, now);
   const time = fmtTime(show.start_time);
   const book = isHttpUrl(show.ticket_url) ? show.ticket_url : (show.sources[0]?.url ?? null);
-  const venueLine = [show.venue_name, show.venue_name ? null : show.city].filter(Boolean).join(", ");
+  const venueLine = [show.venue_name, show.venue_name ? null : show.city]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <article className={`stub-card ${glow ? "is-glow" : ""} slide-in`}>
@@ -95,7 +118,7 @@ export function ShowCard({
               <button
                 type="button"
                 onClick={() => onOpen(show.id)}
-                className="artist-name block max-w-full truncate text-left text-xl leading-tight after:absolute after:inset-0 after:rounded-[18px] after:content-['']"
+                className="artist-name line-clamp-2 max-w-full text-left text-xl leading-tight after:absolute after:inset-0 after:rounded-[18px] after:content-['']"
                 aria-label={`${show.artist.name} in ${show.city}, ${fmtDay(show.start_date)}. Open details`}
               >
                 {show.artist.name}
@@ -108,7 +131,10 @@ export function ShowCard({
             </p>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <CityChip show={show} />
-              <ConfidenceChip confidence={Number(show.confidence)} sourceCount={show.sources.length} />
+              <ConfidenceChip
+                confidence={Number(show.confidence)}
+                sourceCount={show.sources.length}
+              />
               {show.is_sample && <Chip tone="urgent">Sample</Chip>}
             </div>
           </div>
@@ -154,7 +180,10 @@ export function ShowCard({
         >
           {stub.big}
         </p>
-        {stub.big && stub.heading === "Early bird" && stub.tone === "urgent" && stub.sub?.startsWith("closes") ? (
+        {stub.big &&
+        stub.heading === "Early bird" &&
+        stub.tone === "urgent" &&
+        stub.sub?.startsWith("closes") ? (
           <p className="text-xs text-muted">left</p>
         ) : null}
         {stub.sub && (

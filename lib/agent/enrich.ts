@@ -81,7 +81,15 @@ export async function enrich(
       title: e.name,
       ticketingPage: true,
       content: `Ticketmaster event: ${e.name} | ${e.startDate ?? "?"} ${e.startTime ?? ""} | ${e.venue ?? "?"}, ${e.city ?? "?"} | ${e.cancelled ? "CANCELLED" : "scheduled"}${
-        e.tiers.length ? " | tiers: " + e.tiers.map((t) => `${t.name} (${t.status}${t.sale_start ? ", from " + t.sale_start : ""}${t.sale_end ? ", until " + t.sale_end : ""})`).join("; ") : ""
+        e.tiers.length
+          ? " | tiers: " +
+            e.tiers
+              .map(
+                (t) =>
+                  `${t.name} (${t.status}${t.sale_start ? ", from " + t.sale_start : ""}${t.sale_end ? ", until " + t.sale_end : ""})`,
+              )
+              .join("; ")
+          : ""
       }${e.priceMinInr ? ` | from INR ${e.priceMinInr}` : ""}`,
     });
   }
@@ -111,12 +119,20 @@ export async function enrich(
       });
     } else if (r.reason === "quota_exhausted") {
       ctx.scrapeBlocked = true;
-      await logger.warn("scrape", "Scrape budget reached for today — using search results only.", name);
+      await logger.warn(
+        "scrape",
+        "Scrape budget reached for today — using search results only.",
+        name,
+      );
       break;
     } else if (r.reason === "not_configured") {
       break;
     } else {
-      await logger.warn("scrape", `Couldn't read ${host} (${r.message}). Using search results instead.`, name);
+      await logger.warn(
+        "scrape",
+        `Couldn't read ${host} (${r.message}). Using search results instead.`,
+        name,
+      );
     }
   }
   return { artist, sources };

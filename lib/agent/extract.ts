@@ -38,11 +38,21 @@ export function candidateFromTicketmaster(e: TmEvent, artist: ArtistRow): Candid
   };
 }
 
-function offerStatus(availability: string | null, validFrom: string | null, now: Date): Tier["status"] {
+function offerStatus(
+  availability: string | null,
+  validFrom: string | null,
+  now: Date,
+): Tier["status"] {
   const a = (availability ?? "").toLowerCase();
   if (a.includes("soldout") || a.includes("outofstock")) return "sold_out";
-  if (a.includes("preorder") || a.includes("presale") || (validFrom && new Date(validFrom).getTime() > now.getTime())) return "upcoming";
-  if (a.includes("instock") || a.includes("onlineonly") || a.includes("limitedavailability")) return "on_sale";
+  if (
+    a.includes("preorder") ||
+    a.includes("presale") ||
+    (validFrom && new Date(validFrom).getTime() > now.getTime())
+  )
+    return "upcoming";
+  if (a.includes("instock") || a.includes("onlineonly") || a.includes("limitedavailability"))
+    return "on_sale";
   return "unknown";
 }
 
@@ -60,10 +70,15 @@ export function candidatesFromJsonLd(
     const titleNorm = normalizeArtist(ev.name);
     if (!` ${titleNorm} `.includes(` ${norm} `)) continue; // page event must be about this artist
     const city = resolveCity(ev.city ?? "");
-    const { date, time } = ev.startDate.includes("T") ? istParts(new Date(ev.startDate)) : { date: ev.startDate.slice(0, 10), time: "" };
+    const { date, time } = ev.startDate.includes("T")
+      ? istParts(new Date(ev.startDate))
+      : { date: ev.startDate.slice(0, 10), time: "" };
     const tiers: Tier[] = ev.offers.map((o) => ({
       name: o.name ?? "Ticket",
-      price_inr: o.price && /^\d+(\.\d+)?$/.test(o.price) && (!o.currency || o.currency === "INR") ? Math.round(Number(o.price)) : null,
+      price_inr:
+        o.price && /^\d+(\.\d+)?$/.test(o.price) && (!o.currency || o.currency === "INR")
+          ? Math.round(Number(o.price))
+          : null,
       status: offerStatus(o.availability, o.validFrom, now),
       sale_start: o.validFrom,
       sale_end: o.validThrough,
@@ -96,7 +111,12 @@ export function candidatesFromJsonLd(
 }
 
 /** Stage C: Gemini JSON-mode extraction + deterministic mapping of structured sources. */
-export async function extract(artist: ArtistRow, d: Discovery, bundle: Bundle, ctx: RunCtx): Promise<Candidate[]> {
+export async function extract(
+  artist: ArtistRow,
+  d: Discovery,
+  bundle: Bundle,
+  ctx: RunCtx,
+): Promise<Candidate[]> {
   const { logger } = ctx;
   const name = artist.name;
   const out: Candidate[] = [];
@@ -109,7 +129,12 @@ export async function extract(artist: ArtistRow, d: Discovery, bundle: Bundle, c
 
   const hasText = bundle.sources.some((s) => s.kind !== "ticketmaster");
   let aiRan = false;
-  if (d.aiAvailable && hasText && !(d.noShows && bundle.sources.every((s) => s.kind === "gemini" || s.kind === "ticketmaster")) && !ctx.gemini.exhausted) {
+  if (
+    d.aiAvailable &&
+    hasText &&
+    !(d.noShows && bundle.sources.every((s) => s.kind === "gemini" || s.kind === "ticketmaster")) &&
+    !ctx.gemini.exhausted
+  ) {
     const prompt = fill(EXTRACTION_PROMPT_V1, {
       TODAY_IST: todayIST(ctx.now()),
       ARTIST: name,
@@ -122,16 +147,25 @@ export async function extract(artist: ArtistRow, d: Discovery, bundle: Bundle, c
     if (r.ok) {
       aiRan = true;
       for (const s of r.data.data.shows) out.push({ ...s, from: "ai" });
-      await logger.info("extract", `Found ${r.data.data.shows.length} possible show${r.data.data.shows.length === 1 ? "" : "s"}. Checking sources…`, name);
+      await logger.info(
+        "extract",
+        `Found ${r.data.data.shows.length} possible show${r.data.data.shows.length === 1 ? "" : "s"}. Checking sources…`,
+        name,
+      );
     } else {
-      await logger.warn("extract", `Couldn't read the search results reliably (${r.message}). Skipping AI results for this run.`, name);
+      await logger.warn(
+        "extract",
+        `Couldn't read the search results reliably (${r.message}). Skipping AI results for this run.`,
+        name,
+      );
     }
   }
 
   // Rule-based fallback when AI didn't run: parse JSON-LD from scraped pages.
   if (!aiRan) {
     for (const s of bundle.sources) {
-      if (s.page && s.page.jsonLdEvents.length > 0) out.push(...candidatesFromJsonLd(s.url, s.page.jsonLdEvents, artist, ctx.now()));
+      if (s.page && s.page.jsonLdEvents.length > 0)
+        out.push(...candidatesFromJsonLd(s.url, s.page.jsonLdEvents, artist, ctx.now()));
     }
   }
   return out;

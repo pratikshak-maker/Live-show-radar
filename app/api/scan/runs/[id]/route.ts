@@ -10,7 +10,10 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   if (!db) return dbMissing();
   const { id } = await ctx.params;
   if (!UUID.test(id)) return apiError("invalid_request", "Bad run id.");
-  const q = parseQuery(req.url, z.object({ afterLogId: z.coerce.number().int().min(0).default(0) }));
+  const q = parseQuery(
+    req.url,
+    z.object({ afterLogId: z.coerce.number().int().min(0).default(0) }),
+  );
   if (!q.ok) return q.res;
 
   const { data: run } = await db.from("scan_runs").select("*").eq("id", id).maybeSingle();

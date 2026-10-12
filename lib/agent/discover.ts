@@ -27,7 +27,14 @@ export function buildDiscoveryPrompt(artist: ArtistRow, homeCity: string, now: D
 export async function discover(artist: ArtistRow, ctx: RunCtx): Promise<Discovery> {
   const { logger } = ctx;
   const name = artist.name;
-  const d: Discovery = { groundedText: null, grounded: [], tm: [], fallbackUrls: [], noShows: false, aiAvailable: true };
+  const d: Discovery = {
+    groundedText: null,
+    grounded: [],
+    tm: [],
+    fallbackUrls: [],
+    noShows: false,
+    aiAvailable: true,
+  };
 
   await logger.info("search", `Searching the web for ${name} shows in India…`, name);
 
@@ -39,8 +46,14 @@ export async function discover(artist: ArtistRow, ctx: RunCtx): Promise<Discover
     d.grounded = g.data.sources;
     d.noShows = g.data.text.includes(NO_SHOWS_SENTINEL) || g.data.text.length === 0;
     ctx.stats.geminiCalls = ctx.gemini.calls;
-    if (d.noShows) await logger.info("search", `No upcoming India shows found for ${name} in web search.`, name);
-    else await logger.info("search", `Web search found possible shows. Checking ${d.grounded.length} source${d.grounded.length === 1 ? "" : "s"}…`, name);
+    if (d.noShows)
+      await logger.info("search", `No upcoming India shows found for ${name} in web search.`, name);
+    else
+      await logger.info(
+        "search",
+        `Web search found possible shows. Checking ${d.grounded.length} source${d.grounded.length === 1 ? "" : "s"}…`,
+        name,
+      );
   } else {
     a1Failed = true;
     d.aiAvailable = false;
@@ -58,7 +71,12 @@ export async function discover(artist: ArtistRow, ctx: RunCtx): Promise<Discover
     const tm = await searchEvents(name);
     if (tm.ok) {
       d.tm = tm.data.filter((e) => e.startDate && e.city);
-      if (d.tm.length > 0) await logger.info("search", `Ticketmaster lists ${d.tm.length} event${d.tm.length === 1 ? "" : "s"} for ${name}.`, name);
+      if (d.tm.length > 0)
+        await logger.info(
+          "search",
+          `Ticketmaster lists ${d.tm.length} event${d.tm.length === 1 ? "" : "s"} for ${name}.`,
+          name,
+        );
     } else if (tm.reason !== "not_configured") {
       await logger.warn("search", `Ticketmaster didn't answer (${tm.message}).`, name);
     }
@@ -72,10 +90,19 @@ export async function discover(artist: ArtistRow, ctx: RunCtx): Promise<Discover
     if (s.ok) {
       d.fallbackUrls = pickResultUrls(s.data, 2);
       ctx.stats.sbCredits += 15;
-      if (d.fallbackUrls.length > 0) await logger.info("search", `Backup search found ${d.fallbackUrls.length} ticketing page${d.fallbackUrls.length === 1 ? "" : "s"} to read.`, name);
+      if (d.fallbackUrls.length > 0)
+        await logger.info(
+          "search",
+          `Backup search found ${d.fallbackUrls.length} ticketing page${d.fallbackUrls.length === 1 ? "" : "s"} to read.`,
+          name,
+        );
     } else if (s.reason === "quota_exhausted") {
       ctx.scrapeBlocked = true;
-      await logger.warn("scrape", "Scrape budget reached for today — using search results only.", name);
+      await logger.warn(
+        "scrape",
+        "Scrape budget reached for today — using search results only.",
+        name,
+      );
     } else if (s.reason !== "not_configured") {
       await logger.warn("search", `Backup search failed (${s.message}).`, name);
     }

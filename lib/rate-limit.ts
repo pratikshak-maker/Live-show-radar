@@ -30,13 +30,18 @@ export function evaluateWindow(
     allowed,
     windowStart,
     count,
-    retryAfterSeconds: allowed ? 0 : Math.max(1, Math.ceil((windowStart + windowMs - nowMs) / 1000)),
+    retryAfterSeconds: allowed
+      ? 0
+      : Math.max(1, Math.ceil((windowStart + windowMs - nowMs) / 1000)),
   };
 }
 
 export function ipHash(ip: string): string {
   const salt = readEnv().CRON_SECRET ?? "live-show-radar";
-  return createHash("sha256").update(ip + salt).digest("hex").slice(0, 16);
+  return createHash("sha256")
+    .update(ip + salt)
+    .digest("hex")
+    .slice(0, 16);
 }
 
 export function clientIp(req: Request): string {
@@ -60,7 +65,8 @@ export async function rateLimit(
       p_key: key,
       p_window_seconds: spec.windowSeconds,
     });
-    if (error || !Array.isArray(data) || data.length === 0) return { allowed: true, retryAfterSeconds: 0 };
+    if (error || !Array.isArray(data) || data.length === 0)
+      return { allowed: true, retryAfterSeconds: 0 };
     const row = data[0] as { out_count: number; out_window_start: string };
     const windowStart = new Date(row.out_window_start).getTime();
     const allowed = row.out_count <= spec.max;

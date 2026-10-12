@@ -5,8 +5,18 @@ import { notify } from "./notify";
 /** Marks shows whose end (or start) date is before today (IST) as past. */
 export async function markPastShows(db: SupabaseClient, now: Date = new Date()): Promise<void> {
   const today = todayIST(now);
-  await db.from("shows").update({ status: "past" }).in("status", ["scheduled", "postponed"]).is("end_date", null).lt("start_date", today);
-  await db.from("shows").update({ status: "past" }).in("status", ["scheduled", "postponed"]).not("end_date", "is", null).lt("end_date", today);
+  await db
+    .from("shows")
+    .update({ status: "past" })
+    .in("status", ["scheduled", "postponed"])
+    .is("end_date", null)
+    .lt("start_date", today);
+  await db
+    .from("shows")
+    .update({ status: "past" })
+    .in("status", ["scheduled", "postponed"])
+    .not("end_date", "is", null)
+    .lt("end_date", today);
 }
 
 /**
@@ -23,15 +33,29 @@ export async function deadlineSweep(db: SupabaseClient, now: Date = new Date()):
     .eq("is_sample", false)
     .gt("early_bird_deadline", now.toISOString())
     .lte("early_bird_deadline", horizon);
-  const shows = (data ?? []) as { id: string; early_bird_deadline: string; early_bird_status: string; start_date: string; venue_name: string | null }[];
+  const shows = (data ?? []) as {
+    id: string;
+    early_bird_deadline: string;
+    early_bird_status: string;
+    start_date: string;
+    venue_name: string | null;
+  }[];
   const changeIds: string[] = [];
   for (const s of shows) {
-    const { data: existing } = await db.from("show_changes").select("id").eq("show_id", s.id).eq("change_type", "early_bird_closing_soon").limit(1);
+    const { data: existing } = await db
+      .from("show_changes")
+      .select("id")
+      .eq("show_id", s.id)
+      .eq("change_type", "early_bird_closing_soon")
+      .limit(1);
     if (existing && existing.length > 0) {
       await db.from("shows").update({ early_bird_status: "closing_soon" }).eq("id", s.id);
       continue;
     }
-    await db.from("shows").update({ early_bird_status: "closing_soon", updated_at: now.toISOString() }).eq("id", s.id);
+    await db
+      .from("shows")
+      .update({ early_bird_status: "closing_soon", updated_at: now.toISOString() })
+      .eq("id", s.id);
     const { data: ch } = await db
       .from("show_changes")
       .insert({

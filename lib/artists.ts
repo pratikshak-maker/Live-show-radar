@@ -21,12 +21,18 @@ export function originFromCountry(country: string | null | undefined): Origin {
 }
 
 /** Insert (or return the existing) artist. Skips network enrichment — call enrichArtist after. */
-export async function addArtist(a: NewArtist): Promise<{ artist: ArtistRow; created: boolean } | null> {
+export async function addArtist(
+  a: NewArtist,
+): Promise<{ artist: ArtistRow; created: boolean } | null> {
   const db = getDb();
   if (!db) return null;
   const norm = normalizeArtist(a.name);
   if (!norm) return null;
-  const { data: existing } = await db.from("artists").select("*").eq("name_normalized", norm).maybeSingle();
+  const { data: existing } = await db
+    .from("artists")
+    .select("*")
+    .eq("name_normalized", norm)
+    .maybeSingle();
   if (existing) {
     const row = existing as ArtistRow;
     if (!row.is_active) {

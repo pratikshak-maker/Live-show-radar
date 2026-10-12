@@ -16,7 +16,13 @@ export async function sendViaSmtp(m: Omit<MailMessage, "from">): Promise<Result<
       service: "gmail",
       auth: { user: e.GMAIL_SMTP_USER, pass: e.GMAIL_SMTP_APP_PASSWORD },
     });
-    await transport.sendMail({ from: e.GMAIL_SMTP_USER, to: m.to, subject: m.subject, text: m.text, html: m.html });
+    await transport.sendMail({
+      from: e.GMAIL_SMTP_USER,
+      to: m.to,
+      subject: m.subject,
+      text: m.text,
+      html: m.html,
+    });
     return ok({ from: e.GMAIL_SMTP_USER });
   } catch (err) {
     return fail("upstream_error", errMessage(err).slice(0, 200));

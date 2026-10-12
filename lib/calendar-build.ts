@@ -118,7 +118,9 @@ export function buildCalendarEvents(
   } else {
     when = istToDate(addDaysISO(todayIST(now), 1), "10:00");
   }
-  const briefLines = brief ? `${brief.headline}\n${brief.reasons.map((r) => `• ${r}`).join("\n")}` : undefined;
+  const briefLines = brief
+    ? `${brief.headline}\n${brief.reasons.map((r) => `• ${r}`).join("\n")}`
+    : undefined;
   out.decide_reminder = {
     kind: "decide_reminder",
     summary: `🤔 Decide: ${artist} in ${show.city}?`,
@@ -134,8 +136,16 @@ export function buildCalendarEvents(
 /** Pre-filled "Add to Google Calendar" link — needs no setup. */
 export function templateLink(e: CalEvent): string {
   const fmt = (d: Date) => formatInTimeZone(d, IST, "yyyyMMdd'T'HHmmss");
-  const dates = e.allDay ? `${e.startDate?.replaceAll("-", "")}/${e.endDate?.replaceAll("-", "")}` : `${fmt(e.start)}/${fmt(e.end)}`;
-  const p = new URLSearchParams({ action: "TEMPLATE", text: e.summary, dates, details: e.description, ctz: IST });
+  const dates = e.allDay
+    ? `${e.startDate?.replaceAll("-", "")}/${e.endDate?.replaceAll("-", "")}`
+    : `${fmt(e.start)}/${fmt(e.end)}`;
+  const p = new URLSearchParams({
+    action: "TEMPLATE",
+    text: e.summary,
+    dates,
+    details: e.description,
+    ctz: IST,
+  });
   if (e.location) p.set("location", e.location);
   return `https://calendar.google.com/calendar/render?${p.toString()}`;
 }
@@ -149,6 +159,9 @@ export function toGoogleEvent(e: CalEvent, sourceUrl: string): Record<string, un
     start: e.allDay ? { date: e.startDate } : { dateTime: e.start.toISOString(), timeZone: IST },
     end: e.allDay ? { date: e.endDate } : { dateTime: e.end.toISOString(), timeZone: IST },
     source: { title: "Live Show Radar", url: sourceUrl },
-    reminders: { useDefault: false, overrides: e.reminderMinutes.map((minutes) => ({ method: "popup", minutes })) },
+    reminders: {
+      useDefault: false,
+      overrides: e.reminderMinutes.map((minutes) => ({ method: "popup", minutes })),
+    },
   };
 }

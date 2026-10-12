@@ -37,9 +37,13 @@ export async function searchArtists(q: string, limit = 6): Promise<Result<MbArti
   try {
     const url = `https://musicbrainz.org/ws/2/artist?query=${encodeURIComponent(query)}&fmt=json&limit=${limit}`;
     const res = await throttle(() =>
-      fetchWithTimeout(url, { headers: { "User-Agent": userAgent(), Accept: "application/json" }, timeoutMs: 8000 }),
+      fetchWithTimeout(url, {
+        headers: { "User-Agent": userAgent(), Accept: "application/json" },
+        timeoutMs: 8000,
+      }),
     );
-    if (res.status === 503 || res.status === 429) return fail("rate_limited", "MusicBrainz is busy.", 2000);
+    if (res.status === 503 || res.status === 429)
+      return fail("rate_limited", "MusicBrainz is busy.", 2000);
     if (!res.ok) return fail("upstream_error", `MusicBrainz returned ${res.status}`);
     const parsed = ResponseSchema.safeParse(await res.json());
     if (!parsed.success) return fail("invalid_response", "Unexpected MusicBrainz response");

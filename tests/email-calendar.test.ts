@@ -29,19 +29,53 @@ describe("email subject builder", () => {
     );
   });
   it("home city, no early bird → New:", () => {
-    expect(buildSubject([{ show: show({ early_bird_status: "not_offered", early_bird_deadline: null }), changeType: "new_show" }], NOW)).toBe(
-      "New: Prateek Kuhad in Bengaluru, Mon 14 Dec",
-    );
+    expect(
+      buildSubject(
+        [
+          {
+            show: show({ early_bird_status: "not_offered", early_bird_deadline: null }),
+            changeType: "new_show",
+          },
+        ],
+        NOW,
+      ),
+    ).toBe("New: Prateek Kuhad in Bengaluru, Mon 14 Dec");
   });
   it("other city → New: with that city", () => {
-    expect(buildSubject([{ show: show({ city: "Mumbai", is_home_city: false, early_bird_status: "unknown", early_bird_deadline: null }), changeType: "new_show" }], NOW)).toBe(
-      "New: Prateek Kuhad in Mumbai, Mon 14 Dec",
-    );
+    expect(
+      buildSubject(
+        [
+          {
+            show: show({
+              city: "Mumbai",
+              is_home_city: false,
+              early_bird_status: "unknown",
+              early_bird_deadline: null,
+            }),
+            changeType: "new_show",
+          },
+        ],
+        NOW,
+      ),
+    ).toBe("New: Prateek Kuhad in Mumbai, Mon 14 Dec");
   });
   it("appends (+n more) per distinct show and leads with the highest-priority item", () => {
     const home = show();
-    const other = show({ name: "Lauv", city: "Delhi NCR", is_home_city: false, early_bird_status: "unknown", early_bird_deadline: null });
-    const subj = buildSubject([{ show: other, changeType: "new_show" }, { show: home, changeType: "new_show" }, { show: home, changeType: "early_bird_opened" }], NOW);
+    const other = show({
+      name: "Lauv",
+      city: "Delhi NCR",
+      is_home_city: false,
+      early_bird_status: "unknown",
+      early_bird_deadline: null,
+    });
+    const subj = buildSubject(
+      [
+        { show: other, changeType: "new_show" },
+        { show: home, changeType: "new_show" },
+        { show: home, changeType: "early_bird_opened" },
+      ],
+      NOW,
+    );
     expect(subj.startsWith("🎟️ Prateek Kuhad")).toBe(true);
     expect(subj.endsWith("(+1 more)")).toBe(true);
   });
@@ -50,15 +84,39 @@ describe("email subject builder", () => {
     expect(buildSubject([{ show: show(), changeType: "date_changed" }], NOW)).toMatch(/^Update: /);
   });
   it("sorts Act-now first, then home city", () => {
-    const act = show({ name: "A", city: "Mumbai", is_home_city: false, early_bird_deadline: at(10) });
+    const act = show({
+      name: "A",
+      city: "Mumbai",
+      is_home_city: false,
+      early_bird_deadline: at(10),
+    });
     const home = show({ name: "B", early_bird_status: "unknown", early_bird_deadline: null });
-    const far = show({ name: "C", city: "Pune", is_home_city: false, early_bird_status: "unknown", early_bird_deadline: null });
-    expect(sortItems([{ show: far, changeType: "new_show" }, { show: home, changeType: "new_show" }, { show: act, changeType: "new_show" }], NOW).map((i) => i.show.artist.name)).toEqual(["A", "B", "C"]);
+    const far = show({
+      name: "C",
+      city: "Pune",
+      is_home_city: false,
+      early_bird_status: "unknown",
+      early_bird_deadline: null,
+    });
+    expect(
+      sortItems(
+        [
+          { show: far, changeType: "new_show" },
+          { show: home, changeType: "new_show" },
+          { show: act, changeType: "new_show" },
+        ],
+        NOW,
+      ).map((i) => i.show.artist.name),
+    ).toEqual(["A", "B", "C"]);
   });
 });
 
 describe("email body", () => {
-  const e = buildEmail([{ show: show({ early_bird_deadline: at(5) }), changeType: "new_show" }], { appUrl: "https://radar.example", artistCount: 40, now: NOW });
+  const e = buildEmail([{ show: show({ early_bird_deadline: at(5) }), changeType: "new_show" }], {
+    appUrl: "https://radar.example",
+    artistCount: 40,
+    now: NOW,
+  });
   it("includes badge with IST deadline + time left, 3 buttons, footer", () => {
     expect(e.html).toContain("Early bird open until");
     expect(e.html).toContain("about 5 hours left");
@@ -69,25 +127,41 @@ describe("email body", () => {
     expect(e.text).toContain("Book tickets: https://www.district.in/e/pk");
   });
   it("escapes scraped/AI text", () => {
-    const evil = buildEmail([{ show: show({ name: "<script>alert(1)</script>" }), changeType: "new_show" }], { appUrl: "https://radar.example", artistCount: 1, now: NOW });
+    const evil = buildEmail(
+      [{ show: show({ name: "<script>alert(1)</script>" }), changeType: "new_show" }],
+      { appUrl: "https://radar.example", artistCount: 1, now: NOW },
+    );
     expect(evil.html).not.toContain("<script>alert(1)");
     expect(evil.html).toContain("&lt;script&gt;");
   });
   it("marks tests clearly", () => {
-    const t = buildEmail([{ show: show(), changeType: "new_show" }], { appUrl: "https://x.y", artistCount: 1, now: NOW, testBanner: true });
+    const t = buildEmail([{ show: show(), changeType: "new_show" }], {
+      appUrl: "https://x.y",
+      artistCount: 1,
+      now: NOW,
+      testBanner: true,
+    });
     expect(t.subject.startsWith("[TEST] ")).toBe(true);
     expect(t.html).toContain("This is a test alert");
   });
   it("only links allowlisted ticket URLs, else the first source, else the app", () => {
-    expect(safeBookUrl(show({ ticket_url: "https://evil.example/pay" }), "https://a.b")).toBe("https://www.district.in/"); // fixture source
-    expect(safeBookUrl(show({ ticket_url: "https://evil.example/pay", sources: [] }), "https://a.b")).toMatch(/^https:\/\/a\.b\/\?show=/);
-    expect(safeBookUrl(show({ ticket_url: "https://in.bookmyshow.com/x" }), "https://a.b")).toBe("https://in.bookmyshow.com/x");
+    expect(safeBookUrl(show({ ticket_url: "https://evil.example/pay" }), "https://a.b")).toBe(
+      "https://www.district.in/",
+    ); // fixture source
+    expect(
+      safeBookUrl(show({ ticket_url: "https://evil.example/pay", sources: [] }), "https://a.b"),
+    ).toMatch(/^https:\/\/a\.b\/\?show=/);
+    expect(safeBookUrl(show({ ticket_url: "https://in.bookmyshow.com/x" }), "https://a.b")).toBe(
+      "https://in.bookmyshow.com/x",
+    );
   });
 });
 
 describe("alert copy", () => {
   it("renders readable one-liners", () => {
-    expect(alertMessage("new_show", "Lauv", "Mumbai", "2026-12-14")).toBe("Lauv announced a show in Mumbai, Mon 14 Dec");
+    expect(alertMessage("new_show", "Lauv", "Mumbai", "2026-12-14")).toBe(
+      "Lauv announced a show in Mumbai, Mon 14 Dec",
+    );
   });
 });
 
@@ -99,7 +173,11 @@ describe("calendar event builder", () => {
     expect(ev.start.toISOString()).toBe("2026-12-14T14:00:00.000Z"); // 19:30 IST
     expect(ev.end.getTime() - ev.start.getTime()).toBe(3 * 3_600_000);
     expect(ev.reminderMinutes).toEqual([1440, 180]);
-    const g = toGoogleEvent(ev, "https://radar.example/?show=1") as { start: { timeZone: string }; reminders: { overrides: unknown[] }; source: { title: string } };
+    const g = toGoogleEvent(ev, "https://radar.example/?show=1") as {
+      start: { timeZone: string };
+      reminders: { overrides: unknown[] };
+      source: { title: string };
+    };
     expect(g.start.timeZone).toBe("Asia/Kolkata");
     expect(g.reminders.overrides).toHaveLength(2);
     expect(g.source.title).toBe("Live Show Radar");
@@ -117,22 +195,40 @@ describe("calendar event builder", () => {
     expect(ev.end.toISOString()).toBe("2026-12-06T18:29:00.000Z");
     expect(ev.end.getTime() - ev.start.getTime()).toBe(30 * 60_000);
     expect(ev.reminderMinutes).toEqual([1440, 180, 30]);
-    expect(buildCalendarEvents(show({ early_bird_deadline: null }), "https://x.y", NOW).early_bird_deadline).toBeUndefined();
-    expect(buildCalendarEvents(show({ early_bird_deadline: at(-3) }), "https://x.y", NOW).early_bird_deadline).toBeUndefined();
+    expect(
+      buildCalendarEvents(show({ early_bird_deadline: null }), "https://x.y", NOW)
+        .early_bird_deadline,
+    ).toBeUndefined();
+    expect(
+      buildCalendarEvents(show({ early_bird_deadline: at(-3) }), "https://x.y", NOW)
+        .early_bird_deadline,
+    ).toBeUndefined();
   });
   it("a deadline minutes away still yields a future event", () => {
-    const ev = buildCalendarEvents(show({ early_bird_deadline: at(0.2) }), "https://x.y", NOW).early_bird_deadline!;
+    const ev = buildCalendarEvents(
+      show({ early_bird_deadline: at(0.2) }),
+      "https://x.y",
+      NOW,
+    ).early_bird_deadline!;
     expect(ev.start.getTime()).toBeGreaterThan(NOW.getTime());
     expect(ev.end.getTime()).toBeGreaterThan(ev.start.getTime());
   });
   it("on-sale event only for a future on_sale_at", () => {
-    expect(buildCalendarEvents(show({ on_sale_at: at(24) }), "https://x.y", NOW).on_sale!.reminderMinutes).toEqual([60, 10]);
-    expect(buildCalendarEvents(show({ on_sale_at: at(-1) }), "https://x.y", NOW).on_sale).toBeUndefined();
+    expect(
+      buildCalendarEvents(show({ on_sale_at: at(24) }), "https://x.y", NOW).on_sale!
+        .reminderMinutes,
+    ).toEqual([60, 10]);
+    expect(
+      buildCalendarEvents(show({ on_sale_at: at(-1) }), "https://x.y", NOW).on_sale,
+    ).toBeUndefined();
   });
   it("decide reminder: 6h before deadline, else tomorrow 10:00 IST", () => {
     const a = buildCalendarEvents(show(), "https://x.y", NOW).decide_reminder!;
     expect(a.start.toISOString()).toBe("2026-12-06T12:29:00.000Z");
-    const b = buildCalendarEvents(show({ early_bird_deadline: null }), "https://x.y", NOW, { headline: "Go!", reasons: ["Fan favourite"] }).decide_reminder!;
+    const b = buildCalendarEvents(show({ early_bird_deadline: null }), "https://x.y", NOW, {
+      headline: "Go!",
+      reasons: ["Fan favourite"],
+    }).decide_reminder!;
     expect(b.start.toISOString()).toBe("2026-12-02T04:30:00.000Z");
     expect(b.description).toContain("Go!");
     expect(b.reminderMinutes).toEqual([0]);
@@ -149,7 +245,10 @@ describe("calendar event builder", () => {
 });
 
 describe("MIME builder", () => {
-  const raw = buildMime({ from: "me@x.com", to: "you@x.com", subject: "🎟️ New: Äb", html: "<b>hi</b>", text: "hi" }, "BOUND");
+  const raw = buildMime(
+    { from: "me@x.com", to: "you@x.com", subject: "🎟️ New: Äb", html: "<b>hi</b>", text: "hi" },
+    "BOUND",
+  );
   it("encodes the UTF-8 subject and builds multipart/alternative", () => {
     expect(raw).toContain("Subject: =?UTF-8?B?");
     const b64 = /Subject: =\?UTF-8\?B\?(.*)\?=/.exec(raw)![1];
@@ -158,7 +257,13 @@ describe("MIME builder", () => {
     expect(raw).toContain("--BOUND--");
   });
   it("strips header injection and base64url-encodes", () => {
-    const evil = buildMime({ from: "a@x.com", to: "b@x.com\r\nBcc: c@x.com", subject: "s", html: "h", text: "t" });
+    const evil = buildMime({
+      from: "a@x.com",
+      to: "b@x.com\r\nBcc: c@x.com",
+      subject: "s",
+      html: "h",
+      text: "t",
+    });
     expect(evil).not.toMatch(/\r\nBcc:/);
     expect(toBase64Url("???>>>")).not.toMatch(/[+/=]/);
   });

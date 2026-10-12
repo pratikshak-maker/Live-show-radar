@@ -7,12 +7,18 @@ const throttle = createThrottle(1100); // Nominatim usage policy: 1 request / se
 
 const Schema = z.array(z.object({ lat: z.string(), lon: z.string() }));
 
-export async function geocodeVenue(venue: string, city: string): Promise<Result<{ lat: number; lng: number } | null>> {
+export async function geocodeVenue(
+  venue: string,
+  city: string,
+): Promise<Result<{ lat: number; lng: number } | null>> {
   try {
     const q = `${venue}, ${city}, India`;
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=in`;
     const res = await throttle(() =>
-      fetchWithTimeout(url, { headers: { "User-Agent": userAgent(), Accept: "application/json" }, timeoutMs: 8000 }),
+      fetchWithTimeout(url, {
+        headers: { "User-Agent": userAgent(), Accept: "application/json" },
+        timeoutMs: 8000,
+      }),
     );
     if (!res.ok) return fail("upstream_error", `Nominatim returned ${res.status}`);
     const parsed = Schema.safeParse(await res.json());

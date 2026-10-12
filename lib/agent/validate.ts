@@ -42,7 +42,8 @@ export function validateCandidates(
   const valid: ValidCandidate[] = [];
   const dropped: Dropped[] = [];
 
-  const drop = (c: Candidate, reason: DropReason) => dropped.push({ candidate: c, reason, detail: DROP_MESSAGES[reason] });
+  const drop = (c: Candidate, reason: DropReason) =>
+    dropped.push({ candidate: c, reason, detail: DROP_MESSAGES[reason] });
 
   const pre: { c: Candidate; cityInfo: NonNullable<ReturnType<typeof resolveCity>> }[] = [];
   for (const c of candidates) {
@@ -76,7 +77,10 @@ export function validateCandidates(
       continue;
     }
     // 5. cancelled and never seen before
-    const known = existing.some((e) => e.city_slug === cityInfo.slug && Math.abs(diffDaysISO(e.start_date, c.start_date)) <= 1);
+    const known = existing.some(
+      (e) =>
+        e.city_slug === cityInfo.slug && Math.abs(diffDaysISO(e.start_date, c.start_date)) <= 1,
+    );
     if (c.status === "cancelled" && !known) {
       drop(c, "cancelled_unknown");
       continue;
@@ -85,9 +89,12 @@ export function validateCandidates(
   }
 
   for (const { c, cityInfo } of pre) {
-    const refs = c.evidence_urls.map((u) => bundleUrls.get(normalizeUrl(u))).filter((s): s is NonNullable<typeof s> => Boolean(s));
+    const refs = c.evidence_urls
+      .map((u) => bundleUrls.get(normalizeUrl(u)))
+      .filter((s): s is NonNullable<typeof s> => Boolean(s));
     const ticketingConfirmed =
-      c.from === "ticketmaster" || refs.some((s) => s.ticketingPage && (s.kind !== "scrapingbee" || Boolean(s.page)));
+      c.from === "ticketmaster" ||
+      refs.some((s) => s.ticketingPage && (s.kind !== "scrapingbee" || Boolean(s.page)));
 
     // A second, independent source agrees on city + date (±1 day): another candidate from a
     // different origin/domain, or Ticketmaster.
@@ -102,12 +109,21 @@ export function validateCandidates(
           (o.c.from !== c.from || o.c.evidence_urls.some((u) => !myDomains.has(domainOf(u)))),
       );
 
-    let confidence = confidenceScore({ ticketingConfirmed, secondSourceAgrees: second, hasVenue: Boolean(c.venue_name) });
+    let confidence = confidenceScore({
+      ticketingConfirmed,
+      secondSourceAgrees: second,
+      hasVenue: Boolean(c.venue_name),
+    });
     // Rule-based only (no AI confirmation): cap below "Likely".
     const lowConfidence = c.from === "rules";
     if (lowConfidence) confidence = Math.min(confidence, 0.55);
 
-    const sourceRefs: SourceRef[] = refs.map((s) => ({ url: s.url, title: s.title, kind: s.kind, fetched_at: s.fetchedAt }));
+    const sourceRefs: SourceRef[] = refs.map((s) => ({
+      url: s.url,
+      title: s.title,
+      kind: s.kind,
+      fetched_at: s.fetchedAt,
+    }));
     valid.push({ ...c, cityInfo, confidence, ticketingConfirmed, lowConfidence, sourceRefs });
   }
   return { valid, dropped };

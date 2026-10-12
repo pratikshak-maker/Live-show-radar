@@ -107,11 +107,15 @@ h3 {
   background: var(--surface);
   border-radius: 18px;
   -webkit-mask:
-    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 0, #0000 98%, #000) top / 100% 51% no-repeat,
-    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 0, #0000 98%, #000) top / 100%
+      51% no-repeat,
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 100%, #0000 98%, #000)
+      bottom / 100% 51% no-repeat;
   mask:
-    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 0, #0000 98%, #000) top / 100% 51% no-repeat,
-    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 0, #0000 98%, #000) top / 100%
+      51% no-repeat,
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 100%, #0000 98%, #000)
+      bottom / 100% 51% no-repeat;
   border: 1px solid var(--line);
   transition: background-color 0.15s;
 }
@@ -119,7 +123,9 @@ h3 {
   background: var(--surface-raised);
 }
 .stub-card.is-glow {
-  box-shadow: 0 0 0 1px var(--stage), 0 0 28px -4px var(--glow);
+  box-shadow:
+    0 0 0 1px var(--stage),
+    0 0 28px -4px var(--glow);
 }
 .stub-perf {
   border-left: 2px dashed var(--line);
@@ -204,7 +210,12 @@ h3 {
   }
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-raised) 50%, var(--surface) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--surface) 25%,
+    var(--surface-raised) 50%,
+    var(--surface) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
   border-radius: 12px;

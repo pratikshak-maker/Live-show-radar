@@ -44,7 +44,9 @@ export function isInvalidGrant(e: unknown): boolean {
 }
 
 /** An OAuth client loaded with the stored (decrypted) tokens; refreshed tokens are persisted. */
-export async function authedClient(): Promise<Result<{ client: OAuth2Client; email: string | null }>> {
+export async function authedClient(): Promise<
+  Result<{ client: OAuth2Client; email: string | null }>
+> {
   const client = newOAuthClient();
   if (!client || !encryptionAvailable()) return notConfigured("Google");
   const t = await loadTokens("google");
@@ -65,7 +67,9 @@ export async function authedClient(): Promise<Result<{ client: OAuth2Client; ema
 }
 
 /** Run a Google API call; maps invalid_grant to a "needs reconnect" state. */
-export async function withGoogle<T>(fn: (client: OAuth2Client, email: string | null) => Promise<T>): Promise<Result<T>> {
+export async function withGoogle<T>(
+  fn: (client: OAuth2Client, email: string | null) => Promise<T>,
+): Promise<Result<T>> {
   const a = await authedClient();
   if (!a.ok) return a;
   try {
@@ -75,8 +79,10 @@ export async function withGoogle<T>(fn: (client: OAuth2Client, email: string | n
       await markNeedsReconnect("google");
       return fail("upstream_error", "Google needs to be reconnected.");
     }
-    const status = (e as { code?: number; status?: number })?.code ?? (e as { status?: number })?.status;
-    if (status === 429 || status === 403) return fail("rate_limited", "Google is limiting requests right now.", 5000);
+    const status =
+      (e as { code?: number; status?: number })?.code ?? (e as { status?: number })?.status;
+    if (status === 429 || status === 403)
+      return fail("rate_limited", "Google is limiting requests right now.", 5000);
     return fail("upstream_error", errMessage(e).slice(0, 200));
   }
 }

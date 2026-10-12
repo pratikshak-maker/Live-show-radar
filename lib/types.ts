@@ -1,10 +1,5 @@
 export type EarlyBirdStatus =
-  | "open"
-  | "closing_soon"
-  | "imminent"
-  | "sold_out"
-  | "not_offered"
-  | "unknown";
+  "open" | "closing_soon" | "imminent" | "sold_out" | "not_offered" | "unknown";
 
 export type TierStatus = "on_sale" | "sold_out" | "upcoming" | "unknown";
 

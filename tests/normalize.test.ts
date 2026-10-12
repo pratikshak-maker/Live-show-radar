@@ -92,6 +92,8 @@ describe("urls", () => {
     expect(isTicketingDomain(null)).toBe(false);
   });
   it("normalises tracking params, www and trailing slash", () => {
-    expect(normalizeUrl("https://www.District.in/a/?utm_source=x#top")).toBe("https://district.in/a");
+    expect(normalizeUrl("https://www.District.in/a/?utm_source=x#top")).toBe(
+      "https://district.in/a",
+    );
   });
 });

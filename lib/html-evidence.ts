@@ -30,8 +30,10 @@ const str = (v: unknown): string | null => {
   if (typeof v === "number") return String(v);
   return null;
 };
-const arr = <T,>(v: T | T[] | undefined | null): T[] => (v == null ? [] : Array.isArray(v) ? v : [v]);
-const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const arr = <T>(v: T | T[] | undefined | null): T[] =>
+  v == null ? [] : Array.isArray(v) ? v : [v];
+const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
 
 function isEventType(t: unknown): boolean {
   return arr(t as string | string[]).some((x) => typeof x === "string" && /Event$/.test(x));

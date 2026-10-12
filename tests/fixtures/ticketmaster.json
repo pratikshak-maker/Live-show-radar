@@ -4,14 +4,29 @@
       {
         "name": "Prateek Kuhad - The Way That Lovers Do Tour",
         "url": "https://www.ticketmaster.in/event/prateek-kuhad-bengaluru",
-        "dates": { "start": { "localDate": "2027-02-14", "localTime": "19:30:00" }, "status": { "code": "onsale" } },
+        "dates": {
+          "start": { "localDate": "2027-02-14", "localTime": "19:30:00" },
+          "status": { "code": "onsale" }
+        },
         "sales": {
           "public": { "startDateTime": "2026-11-01T04:30:00Z" },
-          "presales": [{ "name": "Early Bird Presale", "startDateTime": "2026-10-01T04:30:00Z", "endDateTime": "2026-10-20T18:29:00Z" }]
+          "presales": [
+            {
+              "name": "Early Bird Presale",
+              "startDateTime": "2026-10-01T04:30:00Z",
+              "endDateTime": "2026-10-20T18:29:00Z"
+            }
+          ]
         },
         "priceRanges": [{ "min": 1499, "max": 4999, "currency": "INR" }],
         "_embedded": {
-          "venues": [{ "name": "Phoenix Marketcity", "city": { "name": "Bangalore" }, "state": { "name": "Karnataka" } }],
+          "venues": [
+            {
+              "name": "Phoenix Marketcity",
+              "city": { "name": "Bangalore" },
+              "state": { "name": "Karnataka" }
+            }
+          ],
           "attractions": [{ "name": "Prateek Kuhad" }]
         }
       },

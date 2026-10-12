@@ -6,7 +6,12 @@ export type LogLevel = "info" | "success" | "warn" | "error";
 export class RunLogger {
   constructor(public runId: string) {}
 
-  async log(level: LogLevel, step: string, message: string, artistName?: string | null): Promise<void> {
+  async log(
+    level: LogLevel,
+    step: string,
+    message: string,
+    artistName?: string | null,
+  ): Promise<void> {
     const db = getDb();
     if (!db) return;
     try {
@@ -22,10 +27,14 @@ export class RunLogger {
     }
   }
 
-  info = (step: string, message: string, artist?: string | null) => this.log("info", step, message, artist);
-  success = (step: string, message: string, artist?: string | null) => this.log("success", step, message, artist);
-  warn = (step: string, message: string, artist?: string | null) => this.log("warn", step, message, artist);
-  error = (step: string, message: string, artist?: string | null) => this.log("error", step, message, artist);
+  info = (step: string, message: string, artist?: string | null) =>
+    this.log("info", step, message, artist);
+  success = (step: string, message: string, artist?: string | null) =>
+    this.log("success", step, message, artist);
+  warn = (step: string, message: string, artist?: string | null) =>
+    this.log("warn", step, message, artist);
+  error = (step: string, message: string, artist?: string | null) =>
+    this.log("error", step, message, artist);
 }
 
 /** Collects logs in memory (tests / dry runs). */
@@ -34,7 +43,12 @@ export class MemoryLogger extends RunLogger {
   constructor() {
     super("memory");
   }
-  override async log(level: LogLevel, step: string, message: string, artist?: string | null): Promise<void> {
+  override async log(
+    level: LogLevel,
+    step: string,
+    message: string,
+    artist?: string | null,
+  ): Promise<void> {
     this.entries.push({ level, step, message, artist });
   }
 }

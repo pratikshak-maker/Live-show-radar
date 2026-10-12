@@ -131,7 +131,10 @@ export function NotificationsBell() {
                       <span className="block text-xs text-muted">{relative(a.created_at)}</span>
                     </span>
                     {!a.read_at && (
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-stage" aria-label="Unread" />
+                      <span
+                        className="mt-2 h-2 w-2 shrink-0 rounded-full bg-stage"
+                        aria-label="Unread"
+                      />
                     )}
                   </button>
                 </li>

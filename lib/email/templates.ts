@@ -7,7 +7,12 @@ import type { ShowWithArtist } from "../types";
 export type AlertItem = { show: ShowWithArtist; changeType: string };
 
 const esc = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 const EB_LIVE = new Set(["open", "closing_soon", "imminent"]);
 
@@ -39,8 +44,13 @@ export function buildSubject(items: AlertItem[], now: Date = new Date()): string
   const more = distinct > 1 ? ` (+${distinct - 1} more)` : "";
   let base: string;
   if (top.changeType === "cancelled") base = `Cancelled: ${s.artist.name} in ${s.city}, ${day}`;
-  else if (top.changeType === "date_changed" || top.changeType === "venue_changed") base = `Update: ${s.artist.name} in ${s.city}, ${day}`;
-  else if (s.is_home_city && (s.early_bird_status === "open" || s.early_bird_status === "closing_soon") && s.early_bird_deadline) {
+  else if (top.changeType === "date_changed" || top.changeType === "venue_changed")
+    base = `Update: ${s.artist.name} in ${s.city}, ${day}`;
+  else if (
+    s.is_home_city &&
+    (s.early_bird_status === "open" || s.early_bird_status === "closing_soon") &&
+    s.early_bird_deadline
+  ) {
     base = `🎟️ ${s.artist.name} in ${s.city}, ${day} — early bird open till ${fmtDateTime(s.early_bird_deadline)}`;
   } else base = `New: ${s.artist.name} in ${s.city}, ${day}`;
   return base + more;
@@ -52,9 +62,19 @@ function ebBadge(s: ShowWithArtist, now: Date): { text: string; tone: "urgent" |
   switch (s.early_bird_status) {
     case "open":
     case "closing_soon":
-      return { text: dl ? `Early bird open until ${fmtDateTime(dl)} IST${left ? ` — ${left}` : ""}` : "Early bird is open (no deadline listed)", tone: "urgent" };
+      return {
+        text: dl
+          ? `Early bird open until ${fmtDateTime(dl)} IST${left ? ` — ${left}` : ""}`
+          : "Early bird is open (no deadline listed)",
+        tone: "urgent",
+      };
     case "imminent":
-      return { text: dl ? `Early bird opens ${fmtDateTime(dl)} IST${left ? ` — ${left}` : ""}` : "Early bird opens soon", tone: "urgent" };
+      return {
+        text: dl
+          ? `Early bird opens ${fmtDateTime(dl)} IST${left ? ` — ${left}` : ""}`
+          : "Early bird opens soon",
+        tone: "urgent",
+      };
     case "sold_out":
       return { text: "Early bird sold out", tone: "muted" };
     default:
@@ -113,7 +133,9 @@ export function buildEmail(
       const cal = buildCalendarEvents(s, opts.appUrl, now).concert;
       const buttons = [
         { label: "Book tickets", href: safeBookUrl(s, opts.appUrl), primary: true },
-        ...(cal ? [{ label: "Add to Google Calendar", href: templateLink(cal), primary: false }] : []),
+        ...(cal
+          ? [{ label: "Add to Google Calendar", href: templateLink(cal), primary: false }]
+          : []),
         { label: "Open in Radar", href: `${opts.appUrl}/?show=${s.id}`, primary: false },
       ];
       return `

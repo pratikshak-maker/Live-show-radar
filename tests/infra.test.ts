@@ -80,7 +80,7 @@ describe("IST helpers", () => {
   it("countdowns", () => {
     const now = new Date("2026-12-01T00:00:00Z");
     expect(countdownParts(new Date(now.getTime() + (5 * 60 + 12) * 60_000), now)).toBe("5h 12m");
-    expect(countdownParts(new Date(now.getTime() + (52 * 60) * 60_000), now)).toBe("2d 4h");
+    expect(countdownParts(new Date(now.getTime() + 52 * 60 * 60_000), now)).toBe("2d 4h");
     expect(countdownParts(new Date(now.getTime() - 1), now)).toBeNull();
     expect(timeLeftPhrase(new Date(now.getTime() + 5 * 3_600_000), now)).toBe("about 5 hours left");
   });

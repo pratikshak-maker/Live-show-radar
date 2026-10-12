@@ -30,16 +30,23 @@ async function tokenRequest(body: URLSearchParams): Promise<Result<SpotifyTokens
   const e = readEnv();
   if (!e.SPOTIFY_CLIENT_ID || !e.SPOTIFY_CLIENT_SECRET) return notConfigured("Spotify");
   try {
-    const basic = Buffer.from(`${e.SPOTIFY_CLIENT_ID}:${e.SPOTIFY_CLIENT_SECRET}`).toString("base64");
+    const basic = Buffer.from(`${e.SPOTIFY_CLIENT_ID}:${e.SPOTIFY_CLIENT_SECRET}`).toString(
+      "base64",
+    );
     const res = await fetchWithTimeout("https://accounts.spotify.com/api/token", {
       method: "POST",
-      headers: { Authorization: `Basic ${basic}`, "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        Authorization: `Basic ${basic}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
       body,
       timeoutMs: 10_000,
     });
     if (!res.ok) return fail("upstream_error", `Spotify token endpoint returned ${res.status}`);
     const parsed = TokenSchema.safeParse(await res.json());
-    return parsed.success ? ok(parsed.data) : fail("invalid_response", "Unexpected Spotify token response");
+    return parsed.success
+      ? ok(parsed.data)
+      : fail("invalid_response", "Unexpected Spotify token response");
   } catch (err) {
     return fail("upstream_error", errMessage(err));
   }
@@ -47,7 +54,11 @@ async function tokenRequest(body: URLSearchParams): Promise<Result<SpotifyTokens
 
 export function exchangeCode(code: string) {
   return tokenRequest(
-    new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri: readEnv().SPOTIFY_REDIRECT_URI }),
+    new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: readEnv().SPOTIFY_REDIRECT_URI,
+    }),
   );
 }
 
@@ -66,7 +77,12 @@ const FollowingSchema = z.object({
   }),
 });
 
-export type SpotifyArtist = { spotifyId: string; name: string; imageUrl: string | null; genres: string[] };
+export type SpotifyArtist = {
+  spotifyId: string;
+  name: string;
+  imageUrl: string | null;
+  genres: string[];
+};
 
 /** GET /v1/me/following?type=artist (still available in Development Mode per the Feb 2026 migration guide). */
 export async function followedArtists(accessToken: string): Promise<Result<SpotifyArtist[]>> {
@@ -75,14 +91,26 @@ export async function followedArtists(accessToken: string): Promise<Result<Spoti
   try {
     for (let page = 0; page < 10; page++) {
       const url: string = `https://api.spotify.com/v1/me/following?type=artist&limit=50${after ? `&after=${encodeURIComponent(after)}` : ""}`;
-      const res = await fetchWithTimeout(url, { headers: { Authorization: `Bearer ${accessToken}` }, timeoutMs: 10_000 });
+      const res = await fetchWithTimeout(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        timeoutMs: 10_000,
+      });
       if (res.status === 429) return fail("rate_limited", "Spotify is rate limiting us.", 5000);
-      if (res.status === 403) return fail("upstream_error", "Spotify refused: this account isn't allowed to use the app.");
+      if (res.status === 403)
+        return fail(
+          "upstream_error",
+          "Spotify refused: this account isn't allowed to use the app.",
+        );
       if (!res.ok) return fail("upstream_error", `Spotify returned ${res.status}`);
       const parsed = FollowingSchema.safeParse(await res.json());
       if (!parsed.success) return fail("invalid_response", "Unexpected Spotify response");
       for (const a of parsed.data.artists.items) {
-        out.push({ spotifyId: a.id, name: a.name, imageUrl: a.images[0]?.url ?? null, genres: a.genres });
+        out.push({
+          spotifyId: a.id,
+          name: a.name,
+          imageUrl: a.images[0]?.url ?? null,
+          genres: a.genres,
+        });
       }
       after = parsed.data.artists.cursors?.after ?? null;
       if (!after) break;

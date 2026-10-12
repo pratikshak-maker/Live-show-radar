@@ -24,12 +24,19 @@ export async function GET(req: Request) {
   if (!tokens.ok) return back("spotify=error");
 
   const followed = await followedArtists(tokens.data.access_token);
-  if (!followed.ok) return back(`spotify=${followed.reason === "upstream_error" ? "not_allowed" : "error"}`);
+  if (!followed.ok)
+    return back(`spotify=${followed.reason === "upstream_error" ? "not_allowed" : "error"}`);
 
   let added = 0;
   const ids: string[] = [];
   for (const a of followed.data) {
-    const r = await addArtist({ name: a.name, spotifyId: a.spotifyId, imageUrl: a.imageUrl, genres: a.genres, source: "spotify" });
+    const r = await addArtist({
+      name: a.name,
+      spotifyId: a.spotifyId,
+      imageUrl: a.imageUrl,
+      genres: a.genres,
+      source: "spotify",
+    });
     if (r?.created) {
       added++;
       ids.push(r.artist.id);

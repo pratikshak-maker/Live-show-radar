@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const state = randomBytes(32).toString("hex");
   const url = spotifyAuthUrl(state);
-  if (!url) return NextResponse.redirect(new URL("/artists?spotify=not_configured", readEnv().APP_URL));
+  if (!url)
+    return NextResponse.redirect(new URL("/artists?spotify=not_configured", readEnv().APP_URL));
   const res = NextResponse.redirect(url);
   res.cookies.set("lsr_spotify_state", state, {
     httpOnly: true,

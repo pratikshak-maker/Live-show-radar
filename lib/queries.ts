@@ -17,7 +17,12 @@ type RawShow = ShowRow & {
 function shape(r: RawShow): ShowWithArtist | null {
   if (!r.artist) return null;
   const { venue, ...rest } = r;
-  return { ...(rest as ShowRow), artist: r.artist, lat: venue?.lat ?? null, lng: venue?.lng ?? null };
+  return {
+    ...(rest as ShowRow),
+    artist: r.artist,
+    lat: venue?.lat ?? null,
+    lng: venue?.lng ?? null,
+  };
 }
 
 export type ShowFilters = {
@@ -42,7 +47,9 @@ export async function listShows(f: ShowFilters = {}): Promise<ShowWithArtist[]> 
   if (f.city) query = query.eq("city", f.city);
   const { data, error } = await query;
   if (error || !data) return [];
-  let rows = (data as unknown as RawShow[]).map(shape).filter((x): x is ShowWithArtist => x !== null);
+  let rows = (data as unknown as RawShow[])
+    .map(shape)
+    .filter((x): x is ShowWithArtist => x !== null);
 
   if (f.hiddenOnly) rows = rows.filter((s) => s.decision === "not_interested");
   else if (!f.includeHidden) rows = rows.filter((s) => s.decision !== "not_interested");
@@ -101,7 +108,8 @@ export async function getAppStatus(): Promise<AppStatus> {
   const map = getConfiguredMap();
   const missing = missingConnectionsCount(map);
   const db = getDb();
-  if (!db) return { configured: false, artistCount: 0, lastCheckedAt: null, missingConnections: missing };
+  if (!db)
+    return { configured: false, artistCount: 0, lastCheckedAt: null, missingConnections: missing };
   const [{ count }, { data: last }] = await Promise.all([
     db.from("artists").select("id", { count: "exact", head: true }).eq("is_active", true),
     db
@@ -125,7 +133,10 @@ export async function hasRealShowData(): Promise<{ realShows: number; completedS
   if (!db) return { realShows: 0, completedScans: 0 };
   const [{ count: realShows }, { count: completedScans }] = await Promise.all([
     db.from("shows").select("id", { count: "exact", head: true }).eq("is_sample", false),
-    db.from("scan_runs").select("id", { count: "exact", head: true }).in("status", ["completed", "partial"]),
+    db
+      .from("scan_runs")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["completed", "partial"]),
   ]);
   return { realShows: realShows ?? 0, completedScans: completedScans ?? 0 };
 }

@@ -14,6 +14,9 @@ export async function POST(req: Request) {
   const rl = await rateLimit("search", rateLimitScopeForRequest(req));
   if (!rl.allowed) return NextResponse.json({ done: 0, remaining: 0 });
   const done = await geocodePending(db, 3);
-  const { count } = await db.from("venues").select("id", { count: "exact", head: true }).is("geocoded_at", null);
+  const { count } = await db
+    .from("venues")
+    .select("id", { count: "exact", head: true })
+    .is("geocoded_at", null);
   return NextResponse.json({ done, remaining: count ?? 0 });
 }

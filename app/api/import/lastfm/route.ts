@@ -21,7 +21,10 @@ export async function POST(req: Request) {
   const body = await parseBody(req, Schema);
   if (!body.ok) return body.res;
   const rl = await rateLimit("import", rateLimitScopeForRequest(req));
-  if (!rl.allowed) return apiError("rate_limited", "Too many imports. Try again later.", 429, { retryAfterSeconds: rl.retryAfterSeconds });
+  if (!rl.allowed)
+    return apiError("rate_limited", "Too many imports. Try again later.", 429, {
+      retryAfterSeconds: rl.retryAfterSeconds,
+    });
 
   const top = await topArtists(body.data.username);
   if (!top.ok) {
@@ -30,7 +33,9 @@ export async function POST(req: Request) {
   }
 
   const { data: existing } = await db.from("artists").select("name_normalized");
-  const known = new Set((existing ?? []).map((r) => (r as { name_normalized: string }).name_normalized));
+  const known = new Set(
+    (existing ?? []).map((r) => (r as { name_normalized: string }).name_normalized),
+  );
 
   if (!body.data.confirm) {
     return NextResponse.json({

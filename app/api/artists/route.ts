@@ -57,7 +57,8 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   const db = getDb();
   if (!db) return dbMissing();
-  if (!(await isAdmin())) return apiError("admin_required", "Enter the admin passcode in Settings first.", 401);
+  if (!(await isAdmin()))
+    return apiError("admin_required", "Enter the admin passcode in Settings first.", 401);
   const id = new URL(req.url).searchParams.get("id") ?? "";
   if (!UUID.test(id)) return apiError("invalid_request", "Missing artist id.");
   await db.from("artists").delete().eq("id", id);

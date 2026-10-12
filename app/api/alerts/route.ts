@@ -13,7 +13,11 @@ type AlertRow = {
   alert_type: string;
   read_at: string | null;
   created_at: string;
-  show: (Pick<ShowRow, "city" | "start_date" | "early_bird_status"> & { artist: { name: string } | null }) | null;
+  show:
+    | (Pick<ShowRow, "city" | "start_date" | "early_bird_status"> & {
+        artist: { name: string } | null;
+      })
+    | null;
 };
 
 export async function GET() {
@@ -21,7 +25,9 @@ export async function GET() {
   if (!db) return NextResponse.json({ alerts: [], unread: 0 });
   const { data } = await db
     .from("alerts")
-    .select("id, show_id, alert_type, read_at, created_at, show:shows(city, start_date, early_bird_status, artist:artists(name))")
+    .select(
+      "id, show_id, alert_type, read_at, created_at, show:shows(city, start_date, early_bird_status, artist:artists(name))",
+    )
     .eq("channel", "in_app")
     .order("created_at", { ascending: false })
     .limit(20);

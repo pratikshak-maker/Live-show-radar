@@ -13,7 +13,10 @@ function walk(dir: string) {
     const p = join(dir, name);
     const st = statSync(p);
     if (st.isDirectory()) walk(p);
-    else if (/\.(ts|tsx|js|mjs|json|md|yml|yaml|env|example|sql)$/.test(name) || name.startsWith(".env")) {
+    else if (
+      /\.(ts|tsx|js|mjs|json|md|yml|yaml|env|example|sql)$/.test(name) ||
+      name.startsWith(".env")
+    ) {
       if (p.endsWith("check-secrets.ts")) continue;
       const text = readFileSync(p, "utf8");
       for (const m of text.match(pattern) ?? []) {

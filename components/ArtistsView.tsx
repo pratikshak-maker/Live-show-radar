@@ -12,7 +12,12 @@ import { relativeAgo } from "@/lib/time";
 import type { ArtistRow } from "@/lib/types";
 
 export type ArtistItem = ArtistRow & { show_count: number };
-type Suggestion = { mbid: string; name: string; disambiguation: string | null; country: string | null };
+type Suggestion = {
+  mbid: string;
+  name: string;
+  disambiguation: string | null;
+  country: string | null;
+};
 
 const FILTERS = ["All", "Favorites", "Has shows", "India", "International"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -90,7 +95,9 @@ export function ArtistsView({
   }
 
   function toggleFavorite(a: ArtistItem) {
-    setArtists((prev) => prev.map((x) => (x.id === a.id ? { ...x, is_favorite: !x.is_favorite } : x)));
+    setArtists((prev) =>
+      prev.map((x) => (x.id === a.id ? { ...x, is_favorite: !x.is_favorite } : x)),
+    );
     void patch(a.id, { is_favorite: !a.is_favorite });
   }
 
@@ -123,7 +130,9 @@ export function ArtistsView({
   return (
     <div>
       <h1 className="text-3xl font-bold">Artists</h1>
-      <p className="mt-1 text-muted">The radar watches these artists for any announcement in India.</p>
+      <p className="mt-1 text-muted">
+        The radar watches these artists for any announcement in India.
+      </p>
 
       <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-start">
         <AddArtistBar onAdded={onAdded} />
@@ -164,7 +173,10 @@ export function ArtistsView({
         </div>
         <label className="relative block sm:w-64">
           <span className="sr-only">Search your artists</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            aria-hidden
+          />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -205,7 +217,9 @@ export function ArtistsView({
                       title="Favorites are checked more often and ranked higher"
                       className="grid h-10 w-10 place-items-center rounded-[10px] hover:bg-raised"
                     >
-                      <Star className={`h-5 w-5 ${a.is_favorite ? "fill-urgent text-urgent" : "text-muted"}`} />
+                      <Star
+                        className={`h-5 w-5 ${a.is_favorite ? "fill-urgent text-urgent" : "text-muted"}`}
+                      />
                     </button>
                     <button
                       type="button"
@@ -215,7 +229,9 @@ export function ArtistsView({
                       title="Check now"
                       className="grid h-10 w-10 place-items-center rounded-[10px] hover:bg-raised disabled:opacity-50"
                     >
-                      <RefreshCw className={`h-4 w-4 text-muted ${scanning ? "animate-spin" : ""}`} />
+                      <RefreshCw
+                        className={`h-4 w-4 text-muted ${scanning ? "animate-spin" : ""}`}
+                      />
                     </button>
                     <button
                       type="button"
@@ -231,7 +247,11 @@ export function ArtistsView({
                   {scanning ? (
                     <span className="text-muted">{lastLog}</span>
                   ) : a.last_scan_status === "error" ? (
-                    <button type="button" onClick={() => void startScan(a.id)} className="text-urgent underline underline-offset-2">
+                    <button
+                      type="button"
+                      onClick={() => void startScan(a.id)}
+                      className="text-urgent underline underline-offset-2"
+                    >
                       Couldn&apos;t check — retry
                     </button>
                   ) : a.show_count > 0 ? (
@@ -282,7 +302,12 @@ function AddArtistBar({ onAdded }: { onAdded: (a: ArtistItem, created: boolean) 
     return () => clearTimeout(t);
   }, [text]);
 
-  async function add(s: { name: string; mbid?: string; disambiguation?: string | null; country?: string | null }) {
+  async function add(s: {
+    name: string;
+    mbid?: string;
+    disambiguation?: string | null;
+    country?: string | null;
+  }) {
     setBusy(true);
     setOpen(false);
     try {

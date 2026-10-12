@@ -4,7 +4,11 @@ import { ShowCard } from "@/components/ShowCard";
 import { ShowCardSkeleton } from "@/components/ShowCardSkeleton";
 import type { ShowWithArtist } from "@/lib/types";
 
-export function DevCards({ items }: { items: { label: string; show: ShowWithArtist; glow?: boolean }[] }) {
+export function DevCards({
+  items,
+}: {
+  items: { label: string; show: ShowWithArtist; glow?: boolean }[];
+}) {
   return (
     <div>
       <h1 className="text-2xl font-bold">Ticket-stub card states (dev only)</h1>
