@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getConfiguredMap } from "@/lib/integrations/registry";
 import { CopyButton } from "./CopyButton";
 
-const REPO_SETUP = "https://github.com/";
+import { setupDocUrl } from "@/lib/constants";
 
 export function SetupScreen() {
   const map = getConfiguredMap();
@@ -62,7 +62,7 @@ export function SetupScreen() {
         Add these to <code>.env.local</code> (or Vercel → Settings → Environment Variables), then
         reload. Full walkthrough:{" "}
         <a
-          href={`${REPO_SETUP}`}
+          href={setupDocUrl("")}
           target="_blank"
           rel="noopener noreferrer"
           className="text-stage underline underline-offset-2"

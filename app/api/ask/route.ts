@@ -5,6 +5,7 @@ import { AskSchema, GEMINI_ASK_SCHEMA } from "@/lib/agent/schemas";
 import { apiError, dbMissing, parseBody } from "@/lib/api";
 import { getDb } from "@/lib/db";
 import { readEnv } from "@/lib/env";
+import { getHomeCity } from "@/lib/settings";
 import { GeminiBudget, generateJson } from "@/lib/integrations/gemini";
 import { listShows } from "@/lib/queries";
 import { rateLimit, rateLimitScopeForRequest } from "@/lib/rate-limit";
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
   const body = await parseBody(req, z.object({ question: z.string().trim().min(2).max(300) }));
   if (!body.ok) return body.res;
   const env = readEnv();
+  const homeCity = await getHomeCity();
   if (!env.GEMINI_API_KEY) return NextResponse.json({ answer: null, reason: "not_configured", shows: [] });
 
   const rl = await rateLimit("ask", rateLimitScopeForRequest(req));
@@ -36,7 +38,7 @@ export async function POST(req: Request) {
   }));
   const prompt = fill(ASK_PROMPT_V1, {
     TODAY_IST: todayIST(),
-    HOME_CITY: env.HOME_CITY,
+    HOME_CITY: homeCity,
     SHOWS_JSON: JSON.stringify(compact),
     QUESTION: body.data.question,
   });

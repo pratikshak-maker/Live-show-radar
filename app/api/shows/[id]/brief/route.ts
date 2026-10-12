@@ -5,6 +5,7 @@ import { BriefSchema, GEMINI_BRIEF_SCHEMA } from "@/lib/agent/schemas";
 import { apiError, dbMissing, UUID } from "@/lib/api";
 import { getDb } from "@/lib/db";
 import { readEnv } from "@/lib/env";
+import { getHomeCity } from "@/lib/settings";
 import { GeminiBudget, generateJson } from "@/lib/integrations/gemini";
 import { rateLimit, rateLimitScopeForRequest } from "@/lib/rate-limit";
 import { getShow } from "@/lib/queries";
@@ -23,6 +24,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!show) return apiError("not_found", "That show doesn't exist.", 404);
 
   const env = readEnv();
+  const homeCity = await getHomeCity();
   const today = todayIST();
   const fields = {
     artist: show.artist.name,
@@ -37,7 +39,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     tiers: show.tiers,
     price_min_inr: show.price_min_inr,
     confidence: show.confidence,
-    home: env.HOME_CITY,
+    home: homeCity,
     today,
   };
   const hash = createHash("sha256").update(JSON.stringify(fields)).digest("hex");
@@ -61,7 +63,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const prompt = fill(BRIEF_PROMPT_V1, {
     TODAY_IST: today,
     WEEKDAY: formatInTimeZone(new Date(), "Asia/Kolkata", "EEEE"),
-    HOME_CITY: env.HOME_CITY,
+    HOME_CITY: homeCity,
     SHOW_JSON: JSON.stringify(fields),
     GOING_COUNT: String(count ?? 0),
   });

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDb } from "../db";
+import { getHomeCity } from "../settings";
 import { readEnv } from "../env";
 import { GeminiBudget } from "../integrations/gemini";
 import { geocodePending } from "../geocode";
@@ -155,7 +156,7 @@ export async function executeScan(runId: string, artistIds?: string[]): Promise<
     runId,
     logger,
     gemini: new GeminiBudget(),
-    homeCity: env.HOME_CITY,
+    homeCity: await getHomeCity(),
     now: () => new Date(),
     stats,
     scrapeBlocked: false,

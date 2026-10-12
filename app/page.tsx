@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { dbConfigured } from "@/lib/db";
-import { readEnv } from "@/lib/env";
+import { getHomeCity } from "@/lib/settings";
 import { listShows } from "@/lib/queries";
 import { ensureSampleShows } from "@/lib/sample-mode";
 import { RadarView } from "@/components/RadarView";
@@ -14,7 +14,7 @@ export default async function RadarPage() {
   const shows = await listShows({ includeHidden: true });
   return (
     <Suspense>
-      <RadarView initialShows={shows} homeCity={readEnv().HOME_CITY} hasSamples={hasSamples} />
+      <RadarView initialShows={shows} homeCity={await getHomeCity()} hasSamples={hasSamples} />
     </Suspense>
   );
 }
