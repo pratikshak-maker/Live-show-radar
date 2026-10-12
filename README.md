@@ -3,7 +3,7 @@
 An AI agent that watches the artists you follow and tells you **the moment** any of them announces a show in India —
 Bengaluru first — with the venue, date, **early-bird status and deadline**, so you can buy the same day.
 
-> **Live URL:** _add your Vercel URL here_ · **Repo:** _add your GitHub URL here_
+> **Live URL:** <https://live-show-radar-sigma.vercel.app> · **Repo:** <https://github.com/pratikshak-maker/Live-show-radar>
 
 <!-- Screenshots: add images to docs/ and link them here -->
 
