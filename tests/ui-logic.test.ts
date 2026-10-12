@@ -65,31 +65,32 @@ import { classifyGeminiError } from "@/lib/integrations/gemini";
 describe("Gemini error classification", () => {
   const err = (code: number, message: string) =>
     new Error(JSON.stringify({ error: { code, message } }));
+
   it("treats 503 high demand as overloaded (retry on the fallback model)", () => {
     expect(
       classifyGeminiError(err(503, "This model is currently experiencing high demand.")).kind,
     ).toBe("overloaded");
   });
+
   it("treats a 429 with no retry hint + 'plan and billing' as a plan quota (don't retry)", () => {
-    expect(
-      classifyGeminiError(
-        err(
-          429,
-          "RESOURCE_EXHAUSTED You exceeded your current quota, please check your plan and billing details.",
-        ),
-      ).kind,
-    ).toBe("plan_quota");
-  });
-  it("keeps per-minute 429s with a retry delay as rate limits", () => {
-    const c = classifyGeminiError(
-      err(429, 'RESOURCE_EXHAUSTED check your plan and billing "retryDelay": "21s"'),
+    const e = err(
+      429,
+      "You exceeded your current quota, please check your plan and billing details.",
     );
-    expect(c).toEqual({ kind: "rate_limited", retryMs: 21000 });
+    expect(classifyGeminiError(e).kind).toBe("plan_quota");
   });
+
+  it("keeps per-minute 429s with a retry delay as rate limits", () => {
+    // Real SDK errors carry Google's raw JSON body, with retryDelay inside error.details.
+    const raw = new Error(
+      '{"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details.","details":[{"retryDelay":"21s"}]}}',
+    );
+    expect(classifyGeminiError(raw)).toEqual({ kind: "rate_limited", retryMs: 21000 });
+  });
+
   it("detects daily quotas", () => {
     expect(
-      classifyGeminiError(err(429, "RESOURCE_EXHAUSTED GenerateRequestsPerDayPerProjectPerModel"))
-        .kind,
+      classifyGeminiError(err(429, "GenerateRequestsPerDayPerProjectPerModel exceeded")).kind,
     ).toBe("daily_quota");
   });
 });
