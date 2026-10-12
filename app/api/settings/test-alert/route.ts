@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError, dbMissing } from "@/lib/api";
-import { getDb } from "@/lib/db";
+import { getDb, one } from "@/lib/db";
 import { buildEmail } from "@/lib/email/templates";
 import { sendAlertEmail } from "@/lib/email/send";
 import { readEnv } from "@/lib/env";
@@ -14,10 +14,8 @@ export const maxDuration = 30;
 export async function POST() {
   const db = getDb();
   if (!db) return dbMissing();
-  const { count } = await db
-    .from("artists")
-    .select("id", { count: "exact", head: true })
-    .eq("is_active", true);
+  const c = await one<{ n: number }>(db, "select count(*)::int as n from artists where is_active");
+  const count = c?.n ?? 0;
   const show = fixtureShow({
     name: "Sample Artist",
     city: "Bengaluru",

@@ -2,7 +2,7 @@ import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { executeScan, startScan } from "@/lib/agent/run-scan";
 import { apiError, dbMissing, parseBody, UUID } from "@/lib/api";
-import { getDb } from "@/lib/db";
+import { getDb, one } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
@@ -13,14 +13,11 @@ const Schema = z.object({ artistId: z.string().regex(UUID).optional() });
 async function activeRunId(): Promise<string | null> {
   const db = getDb();
   if (!db) return null;
-  const { data } = await db
-    .from("scan_runs")
-    .select("id")
-    .eq("status", "running")
-    .order("started_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return (data?.id as string | undefined) ?? null;
+  const row = await one<{ id: string }>(
+    db,
+    "select id from scan_runs where status = 'running' order by started_at desc limit 1",
+  );
+  return row?.id ?? null;
 }
 
 export async function POST(req: Request) {

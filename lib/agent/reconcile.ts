@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { insertRow, json, one, updateReturning, type Db } from "../db";
 import {
   dedupeKey,
   isHomeCity,
@@ -169,7 +169,7 @@ export type ReconcileResult = { showId: string; isNew: boolean; changes: ChangeT
 
 /** Apply a plan to the DB (upsert show, venue link, change rows). `existing` is mutated to stay current. */
 export async function reconcileCandidate(
-  db: SupabaseClient,
+  db: Db,
   artist: ArtistRow,
   vc: ValidCandidate,
   existing: ShowRow[],
@@ -180,70 +180,70 @@ export async function reconcileCandidate(
   const now = ctx.now();
   const plan = planUpsert(old, vc, artist, ctx.homeCity, now);
 
-  // Venue cache row (coordinates are filled lazily).
-  let venueId: string | null = old?.venue_id ?? null;
-  if (plan.patch.venue_name) {
-    const key = venueKey(plan.patch.venue_name, plan.patch.city);
-    const { data: v } = await db
-      .from("venues")
-      .upsert({ name: plan.patch.venue_name, city: plan.patch.city, key }, { onConflict: "key" })
-      .select("id")
-      .single();
-    venueId = (v?.id as string | undefined) ?? venueId;
-  }
+  try {
+    // Venue cache row (coordinates are filled lazily).
+    let venueId: string | null = old?.venue_id ?? null;
+    if (plan.patch.venue_name) {
+      const key = venueKey(plan.patch.venue_name, plan.patch.city);
+      const v = await one<{ id: string }>(
+        db,
+        `insert into venues(name, city, key) values ($1, $2, $3)
+         on conflict (key) do update set name = excluded.name
+         returning id`,
+        [plan.patch.venue_name, plan.patch.city, key],
+      );
+      venueId = v?.id ?? venueId;
+    }
 
-  let row: ShowRow | null = null;
-  if (old) {
-    const { data, error } = await db
-      .from("shows")
-      .update({ ...plan.patch, venue_id: venueId, updated_at: now.toISOString() })
-      .eq("id", old.id)
-      .select("*")
-      .single();
-    if (error || !data) return null;
-    row = data as ShowRow;
-    const i = existing.findIndex((s) => s.id === old.id);
-    if (i >= 0) existing[i] = row;
-  } else {
-    const { data, error } = await db
-      .from("shows")
-      .insert({
-        ...plan.patch,
+    const fields = {
+      ...plan.patch,
+      tiers: json(plan.patch.tiers),
+      sources: json(plan.patch.sources),
+      venue_id: venueId,
+    };
+    let row: ShowRow | null;
+    if (old) {
+      row = await updateReturning<ShowRow>(db, "shows", old.id, {
+        ...fields,
+        updated_at: now.toISOString(),
+      });
+      if (!row) return null;
+      const i = existing.findIndex((s) => s.id === old.id);
+      if (i >= 0) existing[i] = row;
+    } else {
+      row = await insertRow<ShowRow>(db, "shows", {
+        ...fields,
         artist_id: artist.id,
-        venue_id: venueId,
         first_seen_at: now.toISOString(),
-      })
-      .select("*")
-      .single();
-    if (error || !data) return null;
-    row = data as ShowRow;
-    existing.push(row);
-  }
+      });
+      if (!row) return null;
+      existing.push(row);
+    }
 
-  for (const type of plan.changes) {
-    const { data } = await db
-      .from("show_changes")
-      .insert({
-        show_id: row.id,
-        change_type: type,
-        before: old
-          ? {
-              early_bird_status: old.early_bird_status,
-              start_date: old.start_date,
-              venue_name: old.venue_name,
-              early_bird_deadline: old.early_bird_deadline,
-            }
-          : null,
-        after: {
-          early_bird_status: row.early_bird_status,
-          start_date: row.start_date,
-          venue_name: row.venue_name,
-          early_bird_deadline: row.early_bird_deadline,
-        },
-      })
-      .select("id")
-      .single();
-    if (data?.id) ctx.changeIds.push(data.id as string);
+    const before = old
+      ? {
+          early_bird_status: old.early_bird_status,
+          start_date: old.start_date,
+          venue_name: old.venue_name,
+          early_bird_deadline: old.early_bird_deadline,
+        }
+      : null;
+    const after = {
+      early_bird_status: row.early_bird_status,
+      start_date: row.start_date,
+      venue_name: row.venue_name,
+      early_bird_deadline: row.early_bird_deadline,
+    };
+    for (const type of plan.changes) {
+      const ch = await one<{ id: string }>(
+        db,
+        "insert into show_changes(show_id, change_type, before, after) values ($1, $2, $3::jsonb, $4::jsonb) returning id",
+        [row.id, type, json(before), json(after)],
+      );
+      if (ch?.id) ctx.changeIds.push(ch.id);
+    }
+    return { showId: row.id, isNew: plan.isNew, changes: plan.changes };
+  } catch {
+    return null;
   }
-  return { showId: row.id, isNew: plan.isNew, changes: plan.changes };
 }

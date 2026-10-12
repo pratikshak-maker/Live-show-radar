@@ -9,7 +9,7 @@ beforeAll(async () => {
   db = new PGlite();
   // pgcrypto isn't bundled with PGlite; gen_random_uuid() is built in on PG13+.
   const sql = readFileSync(
-    new URL("../supabase/migrations/0001_init.sql", import.meta.url),
+    new URL("../db/migrations/0001_init.sql", import.meta.url),
     "utf8",
   ).replace('create extension if not exists "pgcrypto";', "");
   await db.exec(sql);
@@ -106,7 +106,7 @@ describe("schema constraints", () => {
     expect(r.rows).toEqual([]);
   });
   it("seed.sql loads cleanly and is re-runnable", async () => {
-    const seed = readFileSync(new URL("../supabase/seed.sql", import.meta.url), "utf8");
+    const seed = readFileSync(new URL("../db/seed.sql", import.meta.url), "utf8");
     await db.exec(seed);
     await db.exec(seed);
     expect(

@@ -32,10 +32,10 @@ export async function POST(req: Request) {
     return apiError(top.reason, top.message, status);
   }
 
-  const { data: existing } = await db.from("artists").select("name_normalized");
-  const known = new Set(
-    (existing ?? []).map((r) => (r as { name_normalized: string }).name_normalized),
+  const existing = await db.query<{ name_normalized: string }>(
+    "select name_normalized from artists",
   );
+  const known = new Set(existing.map((r) => r.name_normalized));
 
   if (!body.data.confirm) {
     return NextResponse.json({

@@ -18,11 +18,12 @@ export async function getAppSettings(): Promise<AppSettings> {
   };
   const db = getDb();
   if (!db) return defaults;
-  const { data } = await db
-    .from("settings")
-    .select("key, value")
-    .in("key", ["alert_email", "email_alerts_enabled", "min_confidence_for_email", "home_city"]);
-  const m = new Map((data ?? []).map((r) => [r.key as string, r.value as unknown]));
+  const data = await db
+    .query<{ key: string; value: unknown }>("select key, value from settings where key = any($1)", [
+      ["alert_email", "email_alerts_enabled", "min_confidence_for_email", "home_city"],
+    ])
+    .catch(() => [] as { key: string; value: unknown }[]);
+  const m = new Map(data.map((r) => [r.key, r.value]));
   const str = (k: string) =>
     typeof m.get(k) === "string" && (m.get(k) as string).trim()
       ? (m.get(k) as string).trim()

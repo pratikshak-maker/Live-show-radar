@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   if (!(await isAdmin())) return apiError("admin_required", "Enter the admin passcode first.", 401);
 
   if (body.data.action === "clear_samples") {
-    await db.from("shows").delete().eq("is_sample", true);
+    await db.query("delete from shows where is_sample");
     return NextResponse.json({ ok: true });
   }
   // Reset to the starter list: re-add / re-activate seed artists. Nothing is deleted.
@@ -30,7 +30,13 @@ export async function POST(req: Request) {
     is_favorite: a.favorite ?? false,
     is_active: true,
   }));
-  await db.from("artists").upsert(rows, { onConflict: "name_normalized", ignoreDuplicates: true });
-  await db.from("artists").update({ is_active: true }).eq("source", "seed");
+  for (const r of rows) {
+    await db.query(
+      `insert into artists(name, name_normalized, origin, source, is_favorite, is_active)
+       values ($1, $2, $3, $4, $5, true) on conflict (name_normalized) do nothing`,
+      [r.name, r.name_normalized, r.origin, r.source, r.is_favorite],
+    );
+  }
+  await db.query("update artists set is_active = true where source = 'seed'");
   return NextResponse.json({ ok: true, count: rows.length });
 }

@@ -15,13 +15,10 @@ export class RunLogger {
     const db = getDb();
     if (!db) return;
     try {
-      await db.from("scan_logs").insert({
-        run_id: this.runId,
-        level,
-        step,
-        message: message.slice(0, 500),
-        artist_name: artistName ?? null,
-      });
+      await db.query(
+        "insert into scan_logs(run_id, level, step, message, artist_name) values ($1, $2, $3, $4, $5)",
+        [this.runId, level, step, message.slice(0, 500), artistName ?? null],
+      );
     } catch {
       /* logging must never break a scan */
     }

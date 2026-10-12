@@ -1,29 +1,20 @@
-import { getDb } from "./db";
+import { getDb, one } from "./db";
 import { getConfiguredMap, missingConnectionsCount } from "./integrations/registry";
 import { laneFor } from "./scoring";
 export { groupIntoLanes } from "./lanes";
 export type { Lanes } from "./lanes";
 import { todayIST } from "./time";
-import type { ArtistRow, Lane, ShowRow, ShowWithArtist } from "./types";
+import type { ArtistRow, Lane, ShowWithArtist } from "./types";
 
-const SHOW_SELECT =
-  "*, artist:artists(id, name, image_url, origin, is_favorite), venue:venues(lat, lng)";
-
-type RawShow = ShowRow & {
-  artist: ShowWithArtist["artist"] | null;
-  venue: { lat: number | null; lng: number | null } | null;
-};
-
-function shape(r: RawShow): ShowWithArtist | null {
-  if (!r.artist) return null;
-  const { venue, ...rest } = r;
-  return {
-    ...(rest as ShowRow),
-    artist: r.artist,
-    lat: venue?.lat ?? null,
-    lng: venue?.lng ?? null,
-  };
-}
+/** Show + the artist fields the UI needs + venue coordinates, in one row. */
+export const SHOW_SQL = `
+  select s.*,
+         json_build_object('id', a.id, 'name', a.name, 'image_url', a.image_url,
+                           'origin', a.origin, 'is_favorite', a.is_favorite) as artist,
+         v.lat, v.lng
+    from shows s
+    join artists a on a.id = s.artist_id
+    left join venues v on v.id = s.venue_id`;
 
 export type ShowFilters = {
   lane?: Lane | "all";
@@ -36,20 +27,15 @@ export type ShowFilters = {
 export async function listShows(f: ShowFilters = {}): Promise<ShowWithArtist[]> {
   const db = getDb();
   if (!db) return [];
-  const today = todayIST();
-  let query = db
-    .from("shows")
-    .select(SHOW_SELECT)
-    .in("status", ["scheduled", "postponed"])
-    .gte("start_date", today)
-    .order("start_date", { ascending: true })
-    .limit(500);
-  if (f.city) query = query.eq("city", f.city);
-  const { data, error } = await query;
-  if (error || !data) return [];
-  let rows = (data as unknown as RawShow[])
-    .map(shape)
-    .filter((x): x is ShowWithArtist => x !== null);
+  const params: unknown[] = [todayIST()];
+  let where = "s.status in ('scheduled','postponed') and s.start_date >= $1::date";
+  if (f.city) {
+    params.push(f.city);
+    where += ` and s.city = $${params.length}`;
+  }
+  let rows = await db
+    .query<ShowWithArtist>(`${SHOW_SQL} where ${where} order by s.start_date asc limit 500`, params)
+    .catch(() => [] as ShowWithArtist[]);
 
   if (f.hiddenOnly) rows = rows.filter((s) => s.decision === "not_interested");
   else if (!f.includeHidden) rows = rows.filter((s) => s.decision !== "not_interested");
@@ -73,28 +59,24 @@ export async function listShows(f: ShowFilters = {}): Promise<ShowWithArtist[]> 
 export async function getShow(id: string): Promise<ShowWithArtist | null> {
   const db = getDb();
   if (!db) return null;
-  const { data } = await db.from("shows").select(SHOW_SELECT).eq("id", id).maybeSingle();
-  return data ? shape(data as unknown as RawShow) : null;
+  return one<ShowWithArtist>(db, `${SHOW_SQL} where s.id = $1`, [id]).catch(() => null);
 }
 
 export async function listArtists(): Promise<(ArtistRow & { show_count: number })[]> {
   const db = getDb();
   if (!db) return [];
-  const [{ data: artists }, { data: shows }] = await Promise.all([
-    db.from("artists").select("*").eq("is_active", true).order("name"),
-    db
-      .from("shows")
-      .select("artist_id")
-      .in("status", ["scheduled", "postponed"])
-      .gte("start_date", todayIST())
-      .eq("is_sample", false),
-  ]);
-  const counts = new Map<string, number>();
-  for (const s of shows ?? []) {
-    const id = (s as { artist_id: string }).artist_id;
-    counts.set(id, (counts.get(id) ?? 0) + 1);
-  }
-  return ((artists ?? []) as ArtistRow[]).map((a) => ({ ...a, show_count: counts.get(a.id) ?? 0 }));
+  return db
+    .query<ArtistRow & { show_count: number }>(
+      `select a.*,
+              (select count(*)::int from shows s
+                where s.artist_id = a.id and not s.is_sample
+                  and s.status in ('scheduled','postponed') and s.start_date >= $1::date) as show_count
+         from artists a
+        where a.is_active
+        order by a.name`,
+      [todayIST()],
+    )
+    .catch(() => []);
 }
 
 export type AppStatus = {
@@ -110,20 +92,15 @@ export async function getAppStatus(): Promise<AppStatus> {
   const db = getDb();
   if (!db)
     return { configured: false, artistCount: 0, lastCheckedAt: null, missingConnections: missing };
-  const [{ count }, { data: last }] = await Promise.all([
-    db.from("artists").select("id", { count: "exact", head: true }).eq("is_active", true),
-    db
-      .from("scan_runs")
-      .select("finished_at")
-      .in("status", ["completed", "partial"])
-      .order("finished_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const row = await one<{ artists: number; last: string | null }>(
+    db,
+    `select (select count(*)::int from artists where is_active) as artists,
+            (select max(finished_at) from scan_runs where status in ('completed','partial')) as last`,
+  ).catch(() => null);
   return {
     configured: true,
-    artistCount: count ?? 0,
-    lastCheckedAt: (last?.finished_at as string | null | undefined) ?? null,
+    artistCount: row?.artists ?? 0,
+    lastCheckedAt: row?.last ?? null,
     missingConnections: missing,
   };
 }
@@ -131,12 +108,10 @@ export async function getAppStatus(): Promise<AppStatus> {
 export async function hasRealShowData(): Promise<{ realShows: number; completedScans: number }> {
   const db = getDb();
   if (!db) return { realShows: 0, completedScans: 0 };
-  const [{ count: realShows }, { count: completedScans }] = await Promise.all([
-    db.from("shows").select("id", { count: "exact", head: true }).eq("is_sample", false),
-    db
-      .from("scan_runs")
-      .select("id", { count: "exact", head: true })
-      .in("status", ["completed", "partial"]),
-  ]);
-  return { realShows: realShows ?? 0, completedScans: completedScans ?? 0 };
+  const row = await one<{ real: number; scans: number }>(
+    db,
+    `select (select count(*)::int from shows where not is_sample) as real,
+            (select count(*)::int from scan_runs where status in ('completed','partial')) as scans`,
+  ).catch(() => null);
+  return { realShows: row?.real ?? 0, completedScans: row?.scans ?? 0 };
 }

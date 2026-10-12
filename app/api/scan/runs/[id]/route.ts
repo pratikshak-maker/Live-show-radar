@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, dbMissing, parseQuery, UUID } from "@/lib/api";
-import { getDb } from "@/lib/db";
+import { getDb, one } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -16,14 +16,12 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   );
   if (!q.ok) return q.res;
 
-  const { data: run } = await db.from("scan_runs").select("*").eq("id", id).maybeSingle();
+  const run = await one<{ status: string }>(db, "select * from scan_runs where id = $1", [id]);
   if (!run) return apiError("not_found", "That run doesn't exist.", 404);
-  const { data: logs } = await db
-    .from("scan_logs")
-    .select("id, ts, level, artist_name, step, message")
-    .eq("run_id", id)
-    .gt("id", q.data.afterLogId)
-    .order("id", { ascending: true })
-    .limit(300);
-  return NextResponse.json({ run, logs: logs ?? [], done: run.status !== "running" });
+  const logs = await db.query(
+    `select id, ts, level, artist_name, step, message from scan_logs
+      where run_id = $1 and id > $2 order by id asc limit 300`,
+    [id, q.data.afterLogId],
+  );
+  return NextResponse.json({ run, logs, done: run.status !== "running" });
 }

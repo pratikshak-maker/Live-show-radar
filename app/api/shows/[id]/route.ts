@@ -13,14 +13,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!UUID.test(id)) return apiError("invalid_request", "Bad show id.");
   const show = await getShow(id);
   if (!show) return apiError("not_found", "That show doesn't exist.", 404);
-  const [{ data: changes }, { data: events }, google] = await Promise.all([
-    db
-      .from("show_changes")
-      .select("id, change_type, before, after, created_at")
-      .eq("show_id", id)
-      .order("created_at", { ascending: false })
-      .limit(30),
-    db.from("calendar_events").select("kind, html_link, google_event_id").eq("show_id", id),
+  const [changes, events, google] = await Promise.all([
+    db.query(
+      "select id, change_type, before, after, created_at from show_changes where show_id = $1 order by created_at desc limit 30",
+      [id],
+    ),
+    db.query("select kind, html_link, google_event_id from calendar_events where show_id = $1", [
+      id,
+    ]),
     getOAuthState("google"),
   ]);
   return NextResponse.json({

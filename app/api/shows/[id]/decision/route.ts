@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildCalendarEvents, templateLink, type CalendarKind } from "@/lib/calendar-build";
 import { apiError, dbMissing, parseBody, UUID } from "@/lib/api";
-import { getDb } from "@/lib/db";
+import { getDb, one } from "@/lib/db";
 import { readEnv } from "@/lib/env";
 import { createCalendarEvent, deleteCalendarEvent } from "@/lib/integrations/calendar";
 import { getOAuthState } from "@/lib/integrations/registry";
@@ -49,7 +49,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       400,
     );
 
-  await db.from("shows").update({ decision: body.data.decision }).eq("id", id);
+  await db.query("update shows set decision = $2 where id = $1", [id, body.data.decision]);
 
   const wanted: CalendarKind[] = [];
   const c = body.data.calendar;
@@ -69,24 +69,22 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     if (!ev) continue;
     if (google.connected) {
       // Idempotent: never create a duplicate for (show, kind).
-      const { data: existing } = await db
-        .from("calendar_events")
-        .select("html_link")
-        .eq("show_id", id)
-        .eq("kind", kind)
-        .maybeSingle();
+      const existing = await one<{ html_link: string | null }>(
+        db,
+        "select html_link from calendar_events where show_id = $1 and kind = $2",
+        [id, kind],
+      );
       if (existing) {
-        created.push({ kind, htmlLink: (existing.html_link as string | null) ?? null });
+        created.push({ kind, htmlLink: existing.html_link ?? null });
         continue;
       }
       const r = await createCalendarEvent(ev, `${appUrl}/?show=${id}`);
       if (r.ok) {
-        await db
-          .from("calendar_events")
-          .upsert(
-            { show_id: id, kind, google_event_id: r.data.id, html_link: r.data.htmlLink },
-            { onConflict: "show_id,kind", ignoreDuplicates: true },
-          );
+        await db.query(
+          `insert into calendar_events(show_id, kind, google_event_id, html_link) values ($1, $2, $3, $4)
+           on conflict (show_id, kind) do nothing`,
+          [id, kind, r.data.id, r.data.htmlLink],
+        );
         created.push({ kind, htmlLink: r.data.htmlLink });
         continue;
       }
@@ -112,22 +110,17 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
   const kindParam = new URL(req.url).searchParams.get("kind");
 
   if (!kindParam) {
-    await db.from("shows").update({ decision: null }).eq("id", id);
+    await db.query("update shows set decision = null where id = $1", [id]);
     return NextResponse.json({ ok: true });
   }
   const parsed = z.enum(KINDS).safeParse(kindParam);
   if (!parsed.success) return apiError("invalid_request", "Unknown calendar kind.");
-  const { data: row } = await db
-    .from("calendar_events")
-    .select("id, google_event_id")
-    .eq("show_id", id)
-    .eq("kind", parsed.data)
-    .maybeSingle();
-  if (row?.google_event_id) await deleteCalendarEvent(row.google_event_id as string);
-  if (row)
-    await db
-      .from("calendar_events")
-      .delete()
-      .eq("id", row.id as string);
+  const row = await one<{ id: string; google_event_id: string | null }>(
+    db,
+    "select id, google_event_id from calendar_events where show_id = $1 and kind = $2",
+    [id, parsed.data],
+  );
+  if (row?.google_event_id) await deleteCalendarEvent(row.google_event_id);
+  if (row) await db.query("delete from calendar_events where id = $1", [row.id]);
   return NextResponse.json({ ok: true });
 }

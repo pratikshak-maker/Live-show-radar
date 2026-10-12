@@ -8,9 +8,9 @@ export function SetupScreen() {
   const map = getConfiguredMap();
   const steps = [
     {
-      title: "Create a free Supabase project",
-      body: "Open the SQL editor, paste the migration from supabase/migrations/0001_init.sql, and run it.",
-      vars: ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
+      title: "Create a free Neon Postgres database",
+      body: "In the Neon SQL editor, run db/migrations/0001_init.sql, then copy the pooled connection string.",
+      vars: ["DATABASE_URL"],
       done: map.database.configured,
     },
     {

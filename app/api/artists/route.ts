@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getDb } from "@/lib/db";
+import { getDb, updateById } from "@/lib/db";
 import { isAdmin } from "@/lib/admin";
 import { addArtist, enrichArtist } from "@/lib/artists";
 import { apiError, dbMissing, parseBody, UUID } from "@/lib/api";
@@ -48,8 +48,11 @@ export async function PATCH(req: Request) {
   if (!body.ok) return body.res;
   const { id, ...patch } = body.data;
   if (Object.keys(patch).length === 0) return apiError("invalid_request", "Nothing to update.");
-  const { error } = await db.from("artists").update(patch).eq("id", id);
-  if (error) return apiError("update_failed", "Couldn't update that artist.", 500);
+  try {
+    await updateById(db, "artists", id, patch);
+  } catch {
+    return apiError("update_failed", "Couldn't update that artist.", 500);
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -61,6 +64,6 @@ export async function DELETE(req: Request) {
     return apiError("admin_required", "Enter the admin passcode in Settings first.", 401);
   const id = new URL(req.url).searchParams.get("id") ?? "";
   if (!UUID.test(id)) return apiError("invalid_request", "Missing artist id.");
-  await db.from("artists").delete().eq("id", id);
+  await db.query("delete from artists where id = $1", [id]);
   return NextResponse.json({ ok: true });
 }

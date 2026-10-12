@@ -1,29 +1,26 @@
 # Setup
 
-Everything here is optional except **Supabase** and **Gemini** (needed for scanning). The app builds and runs
+Everything here is optional except the **Neon database** and **Gemini** (needed for scanning). The app builds and runs
 with **no** environment variables — missing pieces just show a friendly "Not connected yet" state.
 
 Put keys in `.env.local` for local development, and in **Vercel → Project → Settings → Environment Variables**
 for production. Never prefix a secret with `NEXT_PUBLIC_`.
 
-Contents: [Supabase](#supabase) · [Gemini](#gemini) · [ScrapingBee](#scrapingbee) · [Google Cloud](#google-cloud) ·
+Contents: [Neon](#neon) · [Gemini](#gemini) · [ScrapingBee](#scrapingbee) · [Google Cloud](#google-cloud) ·
 [Gmail SMTP fallback](#gmail-smtp-fallback) · [Ticketmaster](#ticketmaster) · [Spotify](#spotify) · [Last.fm](#lastfm) ·
 [No-key sources](#no-key-sources) · [Generate secrets](#generate-secrets) · [Vercel](#vercel) · [cron-job.org](#cron-joborg) ·
 [First-run checklist](#first-run-checklist)
 
 ---
 
-## Supabase
+## Neon
 
-1. Go to <https://supabase.com> → **New project** (free tier is fine). Pick a region close to India (e.g. Mumbai).
-2. Open **SQL Editor → New query**, paste the whole migration from the end of this file (also in
-   `supabase/migrations/0001_init.sql`) and click **Run**.
-3. (Optional) New query → paste `supabase/seed.sql` → **Run**. This loads the 40 starter artists. You can also run `npm run seed`.
-4. **Project Settings → API** (or **Data API**): copy the **Project URL** → `SUPABASE_URL`, and the **service_role** key →
-   `SUPABASE_SERVICE_ROLE_KEY`.
+1. Sign in at <https://console.neon.tech> → **New project** → region **AWS Asia Pacific (Singapore)** (closest to India).
+2. **SQL Editor**: paste the whole migration from the end of this file (also `db/migrations/0001_init.sql`) → **Run**.
+3. Paste `db/seed.sql` → **Run** to load the 40 starter artists (or run `npm run seed`).
+4. **Dashboard → Connect**: choose the **pooled** connection, copy the string → `DATABASE_URL`.
 
-The service-role key is used **only on the server**. Row-level security is enabled on every table with no policies,
-so the browser can never reach the database directly.
+`DATABASE_URL` is used **only on the server**. The app never exposes a data API, so the browser can't reach the database.
 
 ## Gemini
 
@@ -127,7 +124,7 @@ Alternative: `.github/workflows/scan.yml` (add `APP_URL` and `CRON_SECRET` repos
 
 ## First-run checklist
 
-1. Open the app (no login). With only Supabase set you'll see the Radar with clearly-labelled **sample** cards.
+1. Open the app (no login). With only the database set you'll see the Radar with clearly-labelled **sample** cards.
 2. **Settings → Connect Google**.
 3. **Settings → Send me a test alert** — check your inbox.
 4. Press **Check now** and watch **Activity** (the radar sweep + live log).
@@ -135,7 +132,7 @@ Alternative: `.github/workflows/scan.yml` (add `APP_URL` and `CRON_SECRET` repos
 
 ---
 
-## Database migration (paste into the Supabase SQL editor)
+## Database migration (paste into the Neon SQL editor)
 
 ```sql
 create extension if not exists "pgcrypto";

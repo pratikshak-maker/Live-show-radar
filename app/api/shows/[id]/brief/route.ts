@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { BRIEF_PROMPT_V1, fill } from "@/lib/agent/prompts";
 import { BriefSchema, GEMINI_BRIEF_SCHEMA } from "@/lib/agent/schemas";
 import { apiError, dbMissing, UUID } from "@/lib/api";
-import { getDb } from "@/lib/db";
+import { getDb, json, one } from "@/lib/db";
 import { readEnv } from "@/lib/env";
 import { getHomeCity } from "@/lib/settings";
 import { GeminiBudget, generateJson } from "@/lib/integrations/gemini";
@@ -56,12 +56,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     });
   }
 
-  const { count } = await db
-    .from("shows")
-    .select("id", { count: "exact", head: true })
-    .eq("artist_id", show.artist_id)
-    .eq("decision", "going")
-    .neq("id", show.id);
+  const going = await one<{ n: number }>(
+    db,
+    "select count(*)::int as n from shows where artist_id = $1 and decision = 'going' and id <> $2",
+    [show.artist_id, show.id],
+  );
+  const count = going?.n ?? 0;
 
   const prompt = fill(BRIEF_PROMPT_V1, {
     TODAY_IST: today,
@@ -79,6 +79,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     });
   }
   const brief = r.data.data;
-  await db.from("shows").update({ ai_brief: brief, ai_brief_hash: hash }).eq("id", id);
+  await db.query("update shows set ai_brief = $2::jsonb, ai_brief_hash = $3 where id = $1", [
+    id,
+    json(brief),
+    hash,
+  ]);
   return NextResponse.json({ brief, cached: false });
 }

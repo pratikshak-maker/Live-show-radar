@@ -9,18 +9,18 @@ export const dynamic = "force-dynamic";
 export default async function ActivityPage() {
   if (!dbConfigured()) return <SetupScreen />;
   const db = getDb();
-  const [{ data }, gemini, sb] = await Promise.all([
+  const [runs, gemini, sb] = await Promise.all([
     db!
-      .from("scan_runs")
-      .select("id, trigger, status, artist_ids, stats, error, started_at, finished_at")
-      .order("started_at", { ascending: false })
-      .limit(20),
+      .query<RunSummary>(
+        "select id, trigger, status, artist_ids, stats, error, started_at, finished_at from scan_runs order by started_at desc limit 20",
+      )
+      .catch(() => [] as RunSummary[]),
     getUsageToday("gemini"),
     getUsageToday("scrapingbee"),
   ]);
   return (
     <ActivityView
-      runs={(data ?? []) as RunSummary[]}
+      runs={runs}
       usage={{
         gemini,
         scrapingbee: sb,

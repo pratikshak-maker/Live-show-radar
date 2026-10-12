@@ -47,5 +47,11 @@ A log of judgment calls, and every place the build deviates from the original pr
 - **Dev-only routes** `/dev/cards` and `/dev/radar` render fixture data and return 404 in production.
 - **Setup links** point at `lib/constants.ts → REPO_URL`; now points at github.com/pratikshak-maker/Live-show-radar.
 - **Venue geocoding** runs lazily: a few venues at the end of a scan if time remains, and on first map view.
-- **Test coverage of the database layer** uses PGlite (Postgres in WASM) to run the real migration and seed; Supabase-client calls
-  themselves are exercised only against a live project.
+- **Database: Neon instead of Supabase.** The owner's Supabase account was at its free-project limit, so the app uses Neon Postgres
+  through `@neondatabase/serverless` (HTTP) with plain parameterised SQL. Secrets stay server-side (`DATABASE_URL` has no
+  `NEXT_PUBLIC_` prefix), and there is no public data API, so the browser can never reach the database. RLS stays enabled in the
+  migration; the owner role used by the app bypasses it.
+- **Driver type parsing.** The Neon HTTP driver only applies custom type parsers passed per query. `lib/db.ts` passes them on
+  every call so dates stay `YYYY-MM-DD` strings (no timezone shift), timestamps are ISO strings and numerics/bigints are numbers.
+- **Test coverage of the database layer** uses PGlite (Postgres in WASM): the real migration + seed, and an end-to-end scan run,
+  reconcile, notifier idempotency, sweeps, locks and rate limits through the app's own code paths.

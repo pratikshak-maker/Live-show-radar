@@ -1,22 +1,14 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { addDaysISO, todayIST } from "../time";
+import { json, one, type Db } from "../db";
+import { todayIST } from "../time";
 import { notify } from "./notify";
 
 /** Marks shows whose end (or start) date is before today (IST) as past. */
-export async function markPastShows(db: SupabaseClient, now: Date = new Date()): Promise<void> {
-  const today = todayIST(now);
-  await db
-    .from("shows")
-    .update({ status: "past" })
-    .in("status", ["scheduled", "postponed"])
-    .is("end_date", null)
-    .lt("start_date", today);
-  await db
-    .from("shows")
-    .update({ status: "past" })
-    .in("status", ["scheduled", "postponed"])
-    .not("end_date", "is", null)
-    .lt("end_date", today);
+export async function markPastShows(db: Db, now: Date = new Date()): Promise<void> {
+  await db.query(
+    `update shows set status = 'past'
+      where status in ('scheduled','postponed') and coalesce(end_date, start_date) < $1::date`,
+    [todayIST(now)],
+  );
 }
 
 /**
@@ -24,60 +16,44 @@ export async function markPastShows(db: SupabaseClient, now: Date = new Date()):
  * early_bird_closing_soon change yet becomes `closing_soon`, with a change + alert.
  * Cheap SQL only — runs on every cron tick, even when scans are skipped.
  */
-export async function deadlineSweep(db: SupabaseClient, now: Date = new Date()): Promise<number> {
+export async function deadlineSweep(db: Db, now: Date = new Date()): Promise<number> {
   const horizon = new Date(now.getTime() + 48 * 3_600_000).toISOString();
-  const { data } = await db
-    .from("shows")
-    .select("id, early_bird_deadline, early_bird_status, start_date, venue_name")
-    .eq("early_bird_status", "open")
-    .eq("is_sample", false)
-    .gt("early_bird_deadline", now.toISOString())
-    .lte("early_bird_deadline", horizon);
-  const shows = (data ?? []) as {
-    id: string;
-    early_bird_deadline: string;
-    early_bird_status: string;
-    start_date: string;
-    venue_name: string | null;
-  }[];
+  const shows = await db.query<{ id: string; early_bird_deadline: string; has_change: boolean }>(
+    `select s.id, s.early_bird_deadline,
+            exists(select 1 from show_changes c where c.show_id = s.id and c.change_type = 'early_bird_closing_soon') as has_change
+       from shows s
+      where s.early_bird_status = 'open' and not s.is_sample
+        and s.early_bird_deadline > $1 and s.early_bird_deadline <= $2`,
+    [now.toISOString(), horizon],
+  );
   const changeIds: string[] = [];
   for (const s of shows) {
-    const { data: existing } = await db
-      .from("show_changes")
-      .select("id")
-      .eq("show_id", s.id)
-      .eq("change_type", "early_bird_closing_soon")
-      .limit(1);
-    if (existing && existing.length > 0) {
-      await db.from("shows").update({ early_bird_status: "closing_soon" }).eq("id", s.id);
-      continue;
-    }
-    await db
-      .from("shows")
-      .update({ early_bird_status: "closing_soon", updated_at: now.toISOString() })
-      .eq("id", s.id);
-    const { data: ch } = await db
-      .from("show_changes")
-      .insert({
-        show_id: s.id,
-        change_type: "early_bird_closing_soon",
-        before: { early_bird_status: "open" },
-        after: { early_bird_status: "closing_soon", early_bird_deadline: s.early_bird_deadline },
-      })
-      .select("id")
-      .single();
-    if (ch?.id) changeIds.push(ch.id as string);
+    await db.query(
+      "update shows set early_bird_status = 'closing_soon', updated_at = now() where id = $1",
+      [s.id],
+    );
+    if (s.has_change) continue;
+    const ch = await one<{ id: string }>(
+      db,
+      `insert into show_changes(show_id, change_type, before, after)
+       values ($1, 'early_bird_closing_soon', $2::jsonb, $3::jsonb) returning id`,
+      [
+        s.id,
+        json({ early_bird_status: "open" }),
+        json({ early_bird_status: "closing_soon", early_bird_deadline: s.early_bird_deadline }),
+      ],
+    );
+    if (ch?.id) changeIds.push(ch.id);
   }
   if (changeIds.length > 0) await notify(db, changeIds);
   return changeIds.length;
 }
 
 /** Shows whose early-bird deadline has passed fall back to unknown so stale countdowns disappear. */
-export async function expireDeadlines(db: SupabaseClient, now: Date = new Date()): Promise<void> {
-  await db
-    .from("shows")
-    .update({ early_bird_status: "unknown", early_bird_deadline: null })
-    .in("early_bird_status", ["open", "closing_soon"])
-    .lt("early_bird_deadline", now.toISOString());
-  void addDaysISO;
+export async function expireDeadlines(db: Db, now: Date = new Date()): Promise<void> {
+  await db.query(
+    `update shows set early_bird_status = 'unknown', early_bird_deadline = null
+      where early_bird_status in ('open','closing_soon') and early_bird_deadline < $1`,
+    [now.toISOString()],
+  );
 }

@@ -1,5 +1,5 @@
 import { readEnv } from "../env";
-import { getDb } from "../db";
+import { getDb, one } from "../db";
 import { encryptionAvailable } from "../crypto";
 
 export type IntegrationKey =
@@ -44,11 +44,11 @@ export function getConfiguredMap(): Record<IntegrationKey, IntegrationStatus> {
   return {
     database: mk(
       "database",
-      "Database",
-      Boolean(e.SUPABASE_URL && e.SUPABASE_SERVICE_ROLE_KEY),
+      "Database (Neon)",
+      Boolean(e.DATABASE_URL),
       true,
       "Stores your artists, shows and alerts.",
-      "supabase",
+      "neon",
     ),
     gemini: mk(
       "gemini",
@@ -136,23 +136,21 @@ export function getConfiguredMap(): Record<IntegrationKey, IntegrationStatus> {
 export async function getOAuthState(provider: "google" | "spotify"): Promise<OAuthState> {
   const db = getDb();
   if (!db) return { connected: false, needsReconnect: false, email: null };
-  const { data } = await db
-    .from("oauth_tokens")
-    .select("account_email, refresh_token_enc")
-    .eq("provider", provider)
-    .maybeSingle();
-  if (!data) return { connected: false, needsReconnect: false, email: null };
-  const { data: flag } = await db
-    .from("settings")
-    .select("value")
-    .eq("key", `${provider}_needs_reconnect`)
-    .maybeSingle();
-  const needs = flag?.value === true;
-  return {
-    connected: !needs,
-    needsReconnect: needs,
-    email: (data.account_email as string | null) ?? null,
-  };
+  try {
+    const row = await one<{ account_email: string | null; needs: unknown }>(
+      db,
+      `select t.account_email, s.value as needs
+         from oauth_tokens t
+         left join settings s on s.key = $2
+        where t.provider = $1`,
+      [provider, `${provider}_needs_reconnect`],
+    );
+    if (!row) return { connected: false, needsReconnect: false, email: null };
+    const needs = row.needs === true;
+    return { connected: !needs, needsReconnect: needs, email: row.account_email ?? null };
+  } catch {
+    return { connected: false, needsReconnect: false, email: null };
+  }
 }
 
 /** Full status incl. stored OAuth tokens. */

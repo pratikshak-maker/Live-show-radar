@@ -1,5 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { getDb } from "../db";
+import { getDb, json, one, type Db } from "../db";
 import { getHomeCity } from "../settings";
 import { readEnv } from "../env";
 import { GeminiBudget } from "../integrations/gemini";
@@ -33,39 +32,28 @@ export async function startScan(trigger: ScanTrigger, artistIds?: string[]): Pro
   if (!db) return { status: "no_db" };
   const got = await acquireLock(LOCK_KEY, LOCK_TTL_SECONDS);
   if (!got) {
-    const { data } = await db
-      .from("scan_runs")
-      .select("id")
-      .eq("status", "running")
-      .order("started_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    return { status: "busy", runId: (data?.id as string | undefined) ?? null };
+    const running = await one<{ id: string }>(
+      db,
+      "select id from scan_runs where status = 'running' order by started_at desc limit 1",
+    ).catch(() => null);
+    return { status: "busy", runId: running?.id ?? null };
   }
-  const { data, error } = await db
-    .from("scan_runs")
-    .insert({ trigger, artist_ids: artistIds ?? [], status: "running" })
-    .select("id")
-    .single();
-  if (error || !data) {
+  const run = await one<{ id: string }>(
+    db,
+    "insert into scan_runs(trigger, artist_ids, status) values ($1, $2::uuid[], 'running') returning id",
+    [trigger, artistIds ?? []],
+  ).catch(() => null);
+  if (!run) {
     await releaseLock(LOCK_KEY);
     return { status: "no_db" };
   }
-  return { status: "started", runId: data.id as string };
+  return { status: "started", runId: run.id };
 }
 
-async function pickArtists(
-  db: SupabaseClient,
-  batch: number,
-  favoritesFirst: boolean,
-): Promise<ArtistRow[]> {
-  const { data } = await db
-    .from("artists")
-    .select("*")
-    .eq("is_active", true)
-    .order("last_scanned_at", { ascending: true, nullsFirst: true })
-    .limit(200);
-  const rows = (data ?? []) as ArtistRow[];
+async function pickArtists(db: Db, batch: number, favoritesFirst: boolean): Promise<ArtistRow[]> {
+  const rows = await db.query<ArtistRow>(
+    "select * from artists where is_active order by last_scanned_at asc nulls first limit 200",
+  );
   const stamp = (a: ArtistRow) => (a.last_scanned_at ? new Date(a.last_scanned_at).getTime() : 0);
   rows.sort((a, b) => {
     const an = a.last_scanned_at === null;
@@ -95,16 +83,14 @@ function earlyBirdSentence(s: Pick<ShowRow, "early_bird_status" | "early_bird_de
   }
 }
 
-async function processArtist(db: SupabaseClient, artist: ArtistRow, ctx: RunCtx): Promise<void> {
+async function processArtist(db: Db, artist: ArtistRow, ctx: RunCtx): Promise<void> {
   const { logger } = ctx;
   const name = artist.name;
   const today = todayIST(ctx.now());
-  const { data: ex } = await db
-    .from("shows")
-    .select("*")
-    .eq("artist_id", artist.id)
-    .gte("start_date", today.slice(0, 8) + "01");
-  const existing = ((ex ?? []) as ShowRow[]).filter((s) => !s.is_sample);
+  const existing = await db.query<ShowRow>(
+    "select * from shows where artist_id = $1 and not is_sample and start_date >= $2::date",
+    [artist.id, today.slice(0, 8) + "01"],
+  );
 
   const d = await discover(artist, ctx);
   const bundle = await enrich(artist, d, existing, ctx);
@@ -162,15 +148,12 @@ async function processArtist(db: SupabaseClient, artist: ArtistRow, ctx: RunCtx)
   if (valid.length === 0 && dropped.length === 0)
     await logger.info("match", `No upcoming India shows for ${name} right now.`, name);
 
-  if (realInserted > 0) await db.from("shows").delete().eq("is_sample", true); // real data replaces sample mode
+  if (realInserted > 0) await db.query("delete from shows where is_sample"); // real data replaces sample mode
 
-  await db
-    .from("artists")
-    .update({
-      last_scanned_at: ctx.now().toISOString(),
-      last_scan_status: valid.length > 0 || existing.length > 0 ? "ok" : "no_results",
-    })
-    .eq("id", artist.id);
+  await db.query(
+    "update artists set last_scanned_at = now(), last_scan_status = $2 where id = $1",
+    [artist.id, valid.length > 0 || existing.length > 0 ? "ok" : "no_results"],
+  );
 }
 
 async function pool<T>(
@@ -225,15 +208,16 @@ export async function executeScan(runId: string, artistIds?: string[]): Promise<
   try {
     let artists: ArtistRow[];
     if (artistIds && artistIds.length > 0) {
-      const { data } = await db.from("artists").select("*").in("id", artistIds);
-      artists = (data ?? []) as ArtistRow[];
+      artists = await db.query<ArtistRow>("select * from artists where id = any($1::uuid[])", [
+        artistIds,
+      ]);
     } else {
-      const { count } = await db.from("scan_runs").select("id", { count: "exact", head: true });
-      artists = await pickArtists(db, env.SCAN_BATCH_SIZE, (count ?? 0) % 2 === 1);
-      await db
-        .from("scan_runs")
-        .update({ artist_ids: artists.map((a) => a.id) })
-        .eq("id", runId);
+      const c = await one<{ n: number }>(db, "select count(*)::int as n from scan_runs");
+      artists = await pickArtists(db, env.SCAN_BATCH_SIZE, (c?.n ?? 0) % 2 === 1);
+      await db.query("update scan_runs set artist_ids = $2::uuid[] where id = $1", [
+        runId,
+        artists.map((a) => a.id),
+      ]);
     }
     if (artists.length === 0)
       await logger.info("search", "No artists to check yet. Add one on the Artists page.");
@@ -252,9 +236,11 @@ export async function executeScan(runId: string, artistIds?: string[]): Promise<
           artist.name,
         );
         await db
-          .from("artists")
-          .update({ last_scanned_at: new Date().toISOString(), last_scan_status: "error" })
-          .eq("id", artist.id);
+          .query(
+            "update artists set last_scanned_at = now(), last_scan_status = 'error' where id = $1",
+            [artist.id],
+          )
+          .catch(() => undefined);
       }
       await logger.info("artist_done", `Finished ${artist.name}.`, artist.name);
     });
@@ -282,9 +268,11 @@ export async function executeScan(runId: string, artistIds?: string[]): Promise<
   } finally {
     stats.geminiCalls = ctx.gemini.calls;
     await db
-      .from("scan_runs")
-      .update({ status, stats, error, finished_at: new Date().toISOString() })
-      .eq("id", runId);
+      .query(
+        "update scan_runs set status = $2, stats = $3::jsonb, error = $4, finished_at = now() where id = $1",
+        [runId, status, json(stats), error],
+      )
+      .catch(() => undefined);
     await releaseLock(LOCK_KEY);
   }
 }

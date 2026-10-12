@@ -1,4 +1,4 @@
-import { getDb } from "./db";
+import { getDb, one, type Db } from "./db";
 import { addDaysISO, todayIST } from "./time";
 import { dedupeKey, resolveCity } from "./normalize";
 import { hasRealShowData } from "./queries";
@@ -52,57 +52,58 @@ const SAMPLES = [
 export async function ensureSampleShows(): Promise<boolean> {
   const db = getDb();
   if (!db) return false;
+  try {
+    return await ensure(db);
+  } catch {
+    return false;
+  }
+}
+
+async function ensure(db: Db): Promise<boolean> {
   const { realShows, completedScans } = await hasRealShowData();
   const geminiOn = getConfiguredMap().gemini.configured;
   if (realShows > 0 || (geminiOn && completedScans > 0)) return false;
 
-  const { count } = await db
-    .from("shows")
-    .select("id", { count: "exact", head: true })
-    .eq("is_sample", true);
-  if ((count ?? 0) > 0) return true;
-
-  const { data } = await db
-    .from("artists")
-    .select("id, name, origin, is_favorite")
-    .in(
-      "name",
-      SAMPLES.map((s) => s.artist),
-    );
-  const byName = new Map(
-    ((data ?? []) as Pick<ArtistRow, "id" | "name">[]).map((a) => [a.name, a.id]),
+  const existing = await one<{ n: number }>(
+    db,
+    "select count(*)::int as n from shows where is_sample",
   );
+  if ((existing?.n ?? 0) > 0) return true;
+
+  const artists = await db.query<Pick<ArtistRow, "id" | "name">>(
+    "select id, name from artists where name = any($1)",
+    [SAMPLES.map((s) => s.artist)],
+  );
+  const byName = new Map(artists.map((a) => [a.name, a.id]));
   const today = todayIST();
-  const rows = SAMPLES.flatMap((s) => {
+  let inserted = 0;
+  for (const s of SAMPLES) {
     const artistId = byName.get(s.artist);
     const city = resolveCity(s.city);
-    if (!artistId || !city) return [];
+    if (!artistId || !city) continue;
     const start = addDaysISO(today, s.days);
-    return [
-      {
-        artist_id: artistId,
-        dedupe_key: `sample|${dedupeKey(s.artist, city.slug, start)}`,
-        city: city.name,
-        city_slug: city.slug,
-        state: city.state,
-        is_home_city: city.name === "Bengaluru",
-        venue_name: s.venue,
-        start_date: start,
-        start_time: s.time,
-        early_bird_status: s.eb,
-        early_bird_deadline: s.ebHours
-          ? new Date(Date.now() + s.ebHours * 3_600_000).toISOString()
-          : null,
-        price_min_inr: s.price,
-        confidence: 0.5,
-        priority_score: 10,
-        is_sample: true,
-        tiers: [],
-        sources: [],
-      },
-    ];
-  });
-  if (rows.length === 0) return false;
-  await db.from("shows").upsert(rows, { onConflict: "dedupe_key", ignoreDuplicates: true });
-  return true;
+    await db.query(
+      `insert into shows(artist_id, dedupe_key, city, city_slug, state, is_home_city, venue_name, start_date,
+                         start_time, early_bird_status, early_bird_deadline, price_min_inr, confidence,
+                         priority_score, is_sample)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,0.5,10,true)
+       on conflict (dedupe_key) do nothing`,
+      [
+        artistId,
+        `sample|${dedupeKey(s.artist, city.slug, start)}`,
+        city.name,
+        city.slug,
+        city.state,
+        city.name === "Bengaluru",
+        s.venue,
+        start,
+        s.time,
+        s.eb,
+        s.ebHours ? new Date(Date.now() + s.ebHours * 3_600_000).toISOString() : null,
+        s.price,
+      ],
+    );
+    inserted++;
+  }
+  return inserted > 0;
 }

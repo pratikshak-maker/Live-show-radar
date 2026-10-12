@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getDb } from "./db";
+import { getDb, one } from "./db";
 import { readEnv } from "./env";
 
 export type RateLimitSpec = { action: string; max: number; windowSeconds: number };
@@ -61,13 +61,12 @@ export async function rateLimit(
   const spec = LIMITS[action];
   const key = `${action}:${scope}`;
   try {
-    const { data, error } = await db.rpc("hit_rate_limit", {
-      p_key: key,
-      p_window_seconds: spec.windowSeconds,
-    });
-    if (error || !Array.isArray(data) || data.length === 0)
-      return { allowed: true, retryAfterSeconds: 0 };
-    const row = data[0] as { out_count: number; out_window_start: string };
+    const row = await one<{ out_count: number; out_window_start: string }>(
+      db,
+      "select * from hit_rate_limit($1, $2)",
+      [key, spec.windowSeconds],
+    );
+    if (!row) return { allowed: true, retryAfterSeconds: 0 };
     const windowStart = new Date(row.out_window_start).getTime();
     const allowed = row.out_count <= spec.max;
     return {

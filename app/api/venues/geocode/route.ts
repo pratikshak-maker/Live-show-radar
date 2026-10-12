@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbMissing } from "@/lib/api";
-import { getDb } from "@/lib/db";
+import { getDb, one } from "@/lib/db";
 import { geocodePending } from "@/lib/geocode";
 import { rateLimit, rateLimitScopeForRequest } from "@/lib/rate-limit";
 
@@ -14,9 +14,9 @@ export async function POST(req: Request) {
   const rl = await rateLimit("search", rateLimitScopeForRequest(req));
   if (!rl.allowed) return NextResponse.json({ done: 0, remaining: 0 });
   const done = await geocodePending(db, 3);
-  const { count } = await db
-    .from("venues")
-    .select("id", { count: "exact", head: true })
-    .is("geocoded_at", null);
-  return NextResponse.json({ done, remaining: count ?? 0 });
+  const left = await one<{ n: number }>(
+    db,
+    "select count(*)::int as n from venues where geocoded_at is null",
+  );
+  return NextResponse.json({ done, remaining: left?.n ?? 0 });
 }

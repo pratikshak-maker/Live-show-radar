@@ -45,9 +45,9 @@ async function check(
 
 const e = readEnv();
 
-await check("Database (Supabase)", dbConfigured(), async () => {
-  const { error } = await getDb()!.from("settings").select("key").limit(1);
-  return { ok: !error, note: error?.message ?? "settings table reachable" };
+await check("Database (Neon)", dbConfigured(), async () => {
+  const rows = await getDb()!.query<{ n: number }>("select count(*)::int as n from artists");
+  return { ok: true, note: `${rows[0]?.n ?? 0} artists` };
 });
 await check("Gemini", Boolean(e.GEMINI_API_KEY), async () => {
   const r = await geminiPing();

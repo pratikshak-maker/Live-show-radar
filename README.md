@@ -29,15 +29,15 @@ flowchart LR
   UI[Next.js UI] --> API[API routes] --> Agent
   Agent[Agent: discover → enrich → extract → validate → reconcile → notify]
   Agent --> Gemini & TM[Ticketmaster] & SB[ScrapingBee]
-  Agent --> DB[(Supabase)]
+  Agent --> DB[(Neon Postgres)]
   Agent --> Gmail[Gmail API / SMTP]
   API --> Cal[Google Calendar]
 ```
 
 ## Tech stack
 
-Next.js 16 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS 4 · Radix UI + lucide-react · Supabase Postgres
-(server-only, RLS on, no anon policies) · `@google/genai` (Gemini Flash only) · `googleapis` · nodemailer · zod · date-fns(-tz) ·
+Next.js 16 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS 4 · Radix UI + lucide-react · Neon Postgres
+(`@neondatabase/serverless`, server-only, parameterised SQL) · `@google/genai` (Gemini Flash only) · `googleapis` · nodemailer · zod · date-fns(-tz) ·
 cheerio · fastest-levenshtein · Leaflet + OpenStreetMap · Vitest · ESLint + Prettier · Vercel.
 
 ## External APIs (10)
@@ -72,7 +72,7 @@ cp .env.example .env.local    # everything is optional
 npm run dev                   # http://localhost:3000
 ```
 
-With no keys you'll see the Setup screen; add Supabase first ([`SETUP.md`](SETUP.md)). Other commands:
+With no keys you'll see the Setup screen; add `DATABASE_URL` (Neon) first ([`SETUP.md`](SETUP.md)). Other commands:
 
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build   # all pass with NO env vars
@@ -96,7 +96,7 @@ npm run check:secrets         # fails if a secret is exposed via NEXT_PUBLIC_
 - Early-bird data is only as good as what ticketing pages publish; many pages hide tiers behind JavaScript or lists changes late.
 - Gemini grounded search can miss announcements that only exist on Instagram; the validator prefers dropping to guessing.
 - Spotify connect only works for accounts the app owner has allow-listed (Development Mode), and needs a Premium owner.
-- Free tiers apply (Gemini daily quota, ScrapingBee credits, Supabase, Vercel Hobby limits); the app meters and degrades instead of failing.
+- Free tiers apply (Gemini daily quota, ScrapingBee credits, Neon free tier, Vercel Hobby limits); the app meters and degrades instead of failing.
 - Ticketmaster has thin India coverage; an empty result is normal.
 - Scan latency is bounded by the scheduler (30 min) and Vercel's function time limit (batches of 4 artists per run).
-- The Supabase-client code paths are exercised against a live project only; SQL functions are tested with PGlite.
+- Database code is tested end to end against PGlite (Postgres in WASM) and smoke-tested against the live Neon database.
