@@ -1,67 +1,68 @@
 @import "tailwindcss";
 
-/* Cobalt sky design tokens. Palette: cobalt #0047AB, navy #000080, sky #82C8E5, slate #6D8196.
-   Light is the default; dark (navy night) follows the OS or the theme toggle. Text pairs meet WCAG AA. */
+/* Cobalt sky, soft edition: mostly cobalt #0047AB and sky #82C8E5, on calm, low-saturation surfaces.
+   No large saturated blocks. Light is the default; dark follows the OS or the toggle. Text pairs meet WCAG AA. */
 :root {
   --cobalt: #0047ab;
-  --navy: #000080;
   --sky: #82c8e5;
+  --sky-soft: #d5ebf5;
+  --navy: #000080;
   --slate: #6d8196;
 
-  --bg: #f5f9fc;
+  --bg: #f4f8fb;
   --surface: #ffffff;
-  --surface-raised: #e9f4fa;
-  --text: #000080;
-  --text-muted: #4e6074;
+  --surface-raised: #e6f2f8;
+  --text: #1e3557;
+  --text-muted: #55687c;
   --stage: #0047ab;
   --stage-ink: #ffffff;
-  --urgent: #000080;
-  --confirmed: #0b6e99;
-  --line: rgba(0, 0, 128, 0.12);
-  --glow: rgba(0, 71, 171, 0.22);
-  --stub-bg: #000080;
-  --stub-ink: #ffffff;
-  --stub-accent: #82c8e5;
-  --stub-muted: #b8ccdd;
+  --urgent: #0047ab;
+  --confirmed: #2b6a8a;
+  --line: rgba(30, 53, 87, 0.1);
+  --glow: rgba(0, 71, 171, 0.14);
+  --stub-bg: #d5ebf5;
+  --stub-ink: #1e3557;
+  --stub-accent: #0047ab;
+  --stub-muted: #3f5a78;
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --bg: #00004a;
-  --surface: #000080;
-  --surface-raised: #101c96;
-  --text: #f3f9fd;
-  --text-muted: #a9bed0;
+  --bg: #111c2b;
+  --surface: #172538;
+  --surface-raised: #1e304a;
+  --text: #e4eef5;
+  --text-muted: #9db2c4;
   --stage: #82c8e5;
-  --stage-ink: #000080;
+  --stage-ink: #111c2b;
   --urgent: #82c8e5;
-  --confirmed: #b9e2f2;
-  --line: rgba(130, 200, 229, 0.2);
-  --glow: rgba(130, 200, 229, 0.3);
-  --stub-bg: #0047ab;
-  --stub-ink: #ffffff;
+  --confirmed: #a8d6e9;
+  --line: rgba(130, 200, 229, 0.14);
+  --glow: rgba(130, 200, 229, 0.16);
+  --stub-bg: #16365f;
+  --stub-ink: #e4eef5;
   --stub-accent: #82c8e5;
-  --stub-muted: #d6e9f5;
+  --stub-muted: #b7cee0;
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #00004a;
-    --surface: #000080;
-    --surface-raised: #101c96;
-    --text: #f3f9fd;
-    --text-muted: #a9bed0;
+    --bg: #111c2b;
+    --surface: #172538;
+    --surface-raised: #1e304a;
+    --text: #e4eef5;
+    --text-muted: #9db2c4;
     --stage: #82c8e5;
-    --stage-ink: #000080;
+    --stage-ink: #111c2b;
     --urgent: #82c8e5;
-    --confirmed: #b9e2f2;
-    --line: rgba(130, 200, 229, 0.2);
-    --glow: rgba(130, 200, 229, 0.3);
-    --stub-bg: #0047ab;
-    --stub-ink: #ffffff;
+    --confirmed: #a8d6e9;
+    --line: rgba(130, 200, 229, 0.14);
+    --glow: rgba(130, 200, 229, 0.16);
+    --stub-bg: #16365f;
+    --stub-ink: #e4eef5;
     --stub-accent: #82c8e5;
-    --stub-muted: #d6e9f5;
+    --stub-muted: #b7cee0;
     color-scheme: dark;
   }
 }
@@ -121,9 +122,9 @@ h3 {
 
 /* The palette itself, as a four-band stripe and a four-block logo mark. */
 .palette-stripe {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  height: 4px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cobalt), var(--sky));
+  opacity: 0.85;
 }
 .logo-mark {
   display: grid;
@@ -134,21 +135,13 @@ h3 {
   overflow: hidden;
   flex-shrink: 0;
 }
-.palette-stripe > span:nth-child(1),
-.logo-mark > span:nth-child(1) {
+.logo-mark > span:nth-child(1),
+.logo-mark > span:nth-child(4) {
   background: var(--cobalt);
 }
-.palette-stripe > span:nth-child(2),
-.logo-mark > span:nth-child(2) {
-  background: var(--navy);
-}
-.palette-stripe > span:nth-child(3),
+.logo-mark > span:nth-child(2),
 .logo-mark > span:nth-child(3) {
   background: var(--sky);
-}
-.palette-stripe > span:nth-child(4),
-.logo-mark > span:nth-child(4) {
-  background: var(--slate);
 }
 
 /* ── Ticket stub card: perforation + notches cut with mask ─────────── */

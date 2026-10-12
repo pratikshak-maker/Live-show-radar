@@ -143,15 +143,15 @@ export function buildEmail(
  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #d6e7f2;border-radius:16px">
   <tr><td style="padding:18px 20px">
    <div style="font-size:12px;color:#4e6074;margin-bottom:4px">${esc(changeLabel(changeType))}${s.is_home_city ? " · in your city" : ""}</div>
-   <div style="font-size:22px;line-height:28px;font-weight:700;color:#000080">${esc(s.artist.name)} — ${esc(s.city)}</div>
-   <div style="font-size:15px;color:#000080;margin-top:4px">${esc(s.venue_name ?? s.city)} · ${esc(fmtDay(s.start_date))}${time ? `, ${esc(time)}` : ""}</div>
-   ${badge ? `<div style="margin-top:10px;display:inline-block;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;background:${badge.tone === "urgent" ? "#e3f2f9" : "#eef3f7"};color:${badge.tone === "urgent" ? "#000080" : "#4e6074"}">${esc(badge.text)}</div>` : ""}
+   <div style="font-size:22px;line-height:28px;font-weight:700;color:#1e3557">${esc(s.artist.name)} — ${esc(s.city)}</div>
+   <div style="font-size:15px;color:#1e3557;margin-top:4px">${esc(s.venue_name ?? s.city)} · ${esc(fmtDay(s.start_date))}${time ? `, ${esc(time)}` : ""}</div>
+   ${badge ? `<div style="margin-top:10px;display:inline-block;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;background:${badge.tone === "urgent" ? "#d5ebf5" : "#eef3f7"};color:${badge.tone === "urgent" ? "#1e3557" : "#4e6074"}">${esc(badge.text)}</div>` : ""}
    <div style="font-size:13px;color:#4e6074;margin-top:10px">${s.price_min_inr ? `From ₹${s.price_min_inr.toLocaleString("en-IN")} · ` : ""}${esc(confidenceLabel(Number(s.confidence)))}</div>
    <div style="margin-top:14px">
     ${buttons
       .map(
         (b) =>
-          `<a href="${esc(b.href)}" style="display:inline-block;margin:0 8px 8px 0;padding:11px 16px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;${b.primary ? "background:#0047ab;color:#ffffff" : "background:#e9f4fa;color:#000080"}">${esc(b.label)}</a>`,
+          `<a href="${esc(b.href)}" style="display:inline-block;margin:0 8px 8px 0;padding:11px 16px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;${b.primary ? "background:#0047ab;color:#ffffff" : "background:#e9f4fa;color:#1e3557"}">${esc(b.label)}</a>`,
       )
       .join("")}
    </div>
@@ -164,7 +164,7 @@ export function buildEmail(
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f5f9fc;font-family:Helvetica,Arial,sans-serif">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f9fc"><tr><td align="center" style="padding:24px 12px">
  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
-  ${opts.testBanner ? `<tr><td style="padding:0 0 12px 0"><div style="background:#e3f2f9;color:#000080;border-radius:10px;padding:10px 14px;font-size:13px"><strong>This is a test alert.</strong> Real alerts look just like this.</div></td></tr>` : ""}
+  ${opts.testBanner ? `<tr><td style="padding:0 0 12px 0"><div style="background:#d5ebf5;color:#1e3557;border-radius:10px;padding:10px 14px;font-size:13px"><strong>This is a test alert.</strong> Real alerts look just like this.</div></td></tr>` : ""}
   ${htmlBlocks}
   <tr><td style="padding:8px 4px;font-size:12px;color:#4e6074">${esc(footer)}</td></tr>
  </table>
