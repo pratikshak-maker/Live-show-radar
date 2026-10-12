@@ -196,7 +196,7 @@ export async function executeScan(runId: string, artistIds?: string[]): Promise<
     if (artists.length > 0 && failures === artists.length) status = "failed";
 
     // Notify (stage F)
-    stats.alerts = await notify(db, ctx);
+    stats.alerts = await notify(db, ctx.changeIds);
 
     // Lazy geocoding while there's time left.
     if (budgetLeft()) await geocodePending(db, 3);

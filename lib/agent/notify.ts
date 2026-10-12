@@ -1,6 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { RunCtx } from "./types";
-
 export const ALERT_WORTHY = new Set([
   "new_show",
   "early_bird_opened",
@@ -17,12 +15,12 @@ export const ALERT_WORTHY = new Set([
  * unique (show_id, alert_type, channel) constraint). Email delivery is added in M8.
  * Returns the number of alert-worthy changes.
  */
-export async function notify(db: SupabaseClient, ctx: RunCtx): Promise<number> {
-  if (ctx.changeIds.length === 0) return 0;
+export async function notify(db: SupabaseClient, changeIds: string[]): Promise<number> {
+  if (changeIds.length === 0) return 0;
   const { data } = await db
     .from("show_changes")
     .select("id, show_id, change_type, show:shows(is_sample, confidence)")
-    .in("id", ctx.changeIds);
+    .in("id", changeIds);
   type Row = { id: string; show_id: string; change_type: string; show: { is_sample: boolean; confidence: number } | null };
   const rows = ((data ?? []) as unknown as Row[]).filter((r) => ALERT_WORTHY.has(r.change_type) && r.show && !r.show.is_sample);
   if (rows.length === 0) return 0;

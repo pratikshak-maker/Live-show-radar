@@ -1,6 +1,8 @@
 import { getDb } from "./db";
 import { getConfiguredMap, missingConnectionsCount } from "./integrations/registry";
 import { laneFor } from "./scoring";
+export { groupIntoLanes } from "./lanes";
+export type { Lanes } from "./lanes";
 import { todayIST } from "./time";
 import type { ArtistRow, Lane, ShowRow, ShowWithArtist } from "./types";
 
@@ -59,22 +61,6 @@ export async function listShows(f: ShowFilters = {}): Promise<ShowWithArtist[]> 
     rows = rows.filter((s) => laneFor(s, now) === f.lane);
   }
   return rows;
-}
-
-export type Lanes = { act_now: ShowWithArtist[]; home: ShowWithArtist[]; elsewhere: ShowWithArtist[] };
-
-export function groupIntoLanes(rows: ShowWithArtist[], now: Date = new Date()): Lanes {
-  const lanes: Lanes = { act_now: [], home: [], elsewhere: [] };
-  for (const s of rows) lanes[laneFor(s, now)].push(s);
-  lanes.act_now.sort(
-    (a, b) =>
-      new Date(a.early_bird_deadline ?? 0).getTime() - new Date(b.early_bird_deadline ?? 0).getTime(),
-  );
-  lanes.home.sort((a, b) => a.start_date.localeCompare(b.start_date));
-  lanes.elsewhere.sort(
-    (a, b) => b.priority_score - a.priority_score || a.start_date.localeCompare(b.start_date),
-  );
-  return lanes;
 }
 
 export async function getShow(id: string): Promise<ShowWithArtist | null> {
