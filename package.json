@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "seed": "tsx scripts/seed.ts",
     "check:integrations": "tsx scripts/check-integrations.ts",
-    "check:secrets": "tsx scripts/check-secrets.ts"
+    "check:secrets": "tsx scripts/check-secrets.ts",
+    "enrich": "tsx scripts/enrich-all.ts"
   },
   "type": "module",
   "dependencies": {

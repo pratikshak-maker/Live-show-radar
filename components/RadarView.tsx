@@ -5,6 +5,7 @@ import { List, Map as MapIcon, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AskBox } from "./AskBox";
+import { RadarHero, type HeroArtist } from "./RadarHero";
 import { SCAN_DONE_EVENT, useScan } from "./ScanProvider";
 import { ShowCard } from "./ShowCard";
 import { ShowCardSkeleton } from "./ShowCardSkeleton";
@@ -20,10 +21,12 @@ const MapView = dynamic(() => import("./MapView"), {
 
 export function RadarView({
   initialShows,
+  artists,
   homeCity,
   hasSamples,
 }: {
   initialShows: ShowWithArtist[];
+  artists: HeroArtist[];
   homeCity: string;
   hasSamples: boolean;
 }) {
@@ -118,7 +121,12 @@ export function RadarView({
 
   return (
     <div className="space-y-4">
-      <h1 className="sr-only">Radar</h1>
+      <RadarHero
+        artists={artists}
+        shows={shows.filter((s) => s.decision !== "not_interested")}
+        actNow={lanes.act_now.length}
+        onOpen={(id) => setOpen(id)}
+      />
       {hasSamples && shows.some((s) => s.is_sample) && (
         <p className="rounded-[12px] border border-sky bg-sky/20 px-4 py-2.5 text-sm">
           These are examples. Real shows appear after the first scan.
@@ -267,14 +275,17 @@ function Lane({
   return (
     <section aria-labelledby={id}>
       <h2 id={id} className="text-xl font-semibold">
-        {title} <span className="text-base font-normal text-muted">({items.length})</span>
+        {title}{" "}
+        <span key={items.length} className="count-in text-base font-normal text-muted">
+          ({items.length})
+        </span>
       </h2>
       {items.length === 0 ? (
         <p className="mt-1 text-sm text-muted">{empty ?? "Nothing here."}</p>
       ) : (
         <ul className="mt-3 grid gap-3 lg:grid-cols-2">
-          {items.map((s) => (
-            <li key={s.id}>
+          {items.map((s, i) => (
+            <li key={s.id} className="stagger" style={{ "--i": i } as React.CSSProperties}>
               <ShowCard
                 show={s}
                 glow={glow}

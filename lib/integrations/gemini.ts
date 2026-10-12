@@ -32,6 +32,7 @@ export type GroundedSource = {
 type ErrClass =
   | { kind: "daily_quota" }
   | { kind: "rate_limited"; retryMs: number | null }
+  | { kind: "overloaded" }
   | { kind: "other"; message: string; status: number | null };
 
 export function classifyGeminiError(e: unknown): ErrClass {
@@ -44,6 +45,10 @@ export function classifyGeminiError(e: unknown): ErrClass {
       /"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/.exec(message) ??
       /retry in (\d+(?:\.\d+)?)s/i.exec(message);
     return { kind: "rate_limited", retryMs: m ? Math.ceil(Number(m[1]) * 1000) : null };
+  }
+  // 500/503 "model overloaded / high demand" is transient: retry with backoff.
+  if (status === 503 || status === 500 || /UNAVAILABLE|high demand|overloaded/i.test(message)) {
+    return { kind: "overloaded" };
   }
   return { kind: "other", message, status };
 }
@@ -81,6 +86,13 @@ async function withRetries<T>(
           continue;
         }
         return fail("rate_limited", "Gemini is rate limiting us.", c.retryMs ?? undefined);
+      }
+      if (c.kind === "overloaded") {
+        if (attempt < backoffs.length) {
+          await sleep(backoffs[attempt]);
+          continue;
+        }
+        return fail("upstream_error", "Gemini is busy right now. We'll retry on the next check.");
       }
       if (ctl.signal.aborted) return fail("upstream_error", "Gemini timed out.");
       return fail("upstream_error", c.message.slice(0, 300));

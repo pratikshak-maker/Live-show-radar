@@ -11,7 +11,12 @@ export default function DevRadarPage() {
   const shows = cardFixtures().map((c) => ({ ...c.show, is_sample: false }));
   return (
     <Suspense>
-      <RadarView initialShows={shows} homeCity="Bengaluru" hasSamples={false} />
+      <RadarView
+        initialShows={shows}
+        artists={shows.map((s) => ({ ...s.artist, show_count: 1 }))}
+        homeCity="Bengaluru"
+        hasSamples={false}
+      />
     </Suspense>
   );
 }

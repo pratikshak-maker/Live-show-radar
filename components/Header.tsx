@@ -35,7 +35,9 @@ export function Header() {
                     href={href}
                     aria-current={active ? "page" : undefined}
                     className={`rounded-[10px] px-3.5 py-2 text-sm font-medium ${
-                      active ? "bg-stage text-stage-ink" : "text-muted hover:bg-surface hover:text-ink"
+                      active
+                        ? "bg-stage text-stage-ink"
+                        : "text-muted hover:bg-surface hover:text-ink"
                     }`}
                   >
                     {label}

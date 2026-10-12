@@ -109,10 +109,10 @@ export function ShowCard({
     .join(", ");
 
   return (
-    <article className={`stub-card ${glow ? "is-glow" : ""} slide-in`}>
+    <article className={`stub-card lift ${glow ? "is-glow" : ""}`}>
       <div className="relative min-w-0 p-4">
         <div className="flex gap-3">
-          <Avatar name={show.artist.name} src={show.artist.image_url} size={56} />
+          <Avatar name={show.artist.name} src={show.artist.image_url} size={64} zoom />
           <div className="min-w-0 flex-1">
             <h3 className="m-0">
               <button

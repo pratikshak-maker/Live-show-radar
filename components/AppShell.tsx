@@ -6,6 +6,7 @@ import { ScanProvider } from "./ScanProvider";
 import { Header } from "./Header";
 import { BottomTabs } from "./BottomTabs";
 import { StatusLine } from "./StatusLine";
+import { RippleLayer } from "./Ripple";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -24,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {children}
           </main>
           <BottomTabs />
+          <RippleLayer />
         </ScanProvider>
       </Tooltip.Provider>
     </ToastProvider>

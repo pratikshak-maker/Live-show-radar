@@ -37,6 +37,7 @@ export function ArtistsView({
   const [artists, setArtists] = useState(initial);
   const [filter, setFilter] = useState<Filter>("All");
   const [q, setQ] = useState("");
+  const [popped, setPopped] = useState<string | null>(null);
 
   // Server data changes after scans / router.refresh()
   const [prevInitial, setPrevInitial] = useState(initial);
@@ -193,78 +194,114 @@ export function ArtistsView({
             : "No artists match that filter."}
         </p>
       ) : (
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {shown.map((a) => {
+        <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {shown.map((a, i) => {
             const scanning = running && scanningArtistId === a.id;
             return (
-              <li key={a.id} className="rounded-[14px] border border-line bg-surface p-4">
-                <div className="flex gap-3">
-                  <Avatar name={a.name} src={a.image_url} size={52} />
-                  <div className="min-w-0 flex-1">
-                    <p className="artist-name truncate text-lg leading-tight">{a.name}</p>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {a.origin !== "unknown" && (
-                        <Chip>{a.origin === "india" ? "India" : "International"}</Chip>
-                      )}
-                    </div>
+              <li
+                key={a.id}
+                className="stagger lift zoom-host group relative overflow-hidden rounded-[14px] border border-line bg-surface"
+                style={{ "--i": i } as React.CSSProperties}
+              >
+                {/* Photo */}
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Avatar
+                    name={a.name}
+                    src={a.image_url}
+                    size={400}
+                    rounded="rounded-none"
+                    zoom
+                    className="!h-full !w-full"
+                  />
+                  <div
+                    aria-hidden
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(to top, color-mix(in srgb, var(--surface) 92%, transparent) 0%, transparent 55%)",
+                    }}
+                  />
+                  {a.show_count > 0 && (
+                    <span className="absolute left-2 top-2 rounded-full bg-stage px-2.5 py-0.5 text-xs font-semibold text-stage-ink shadow-sm">
+                      {a.show_count} show{a.show_count === 1 ? "" : "s"}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!a.is_favorite) setPopped(a.id);
+                      toggleFavorite(a);
+                    }}
+                    aria-pressed={a.is_favorite}
+                    aria-label={a.is_favorite ? `Unfavorite ${a.name}` : `Favorite ${a.name}`}
+                    title="Favorites are checked more often and ranked higher"
+                    className="absolute right-2 top-2 grid h-10 w-10 place-items-center rounded-full bg-surface/85 backdrop-blur hover:bg-surface"
+                  >
+                    <Star
+                      onAnimationEnd={() => setPopped(null)}
+                      className={`h-5 w-5 ${a.is_favorite ? "fill-[var(--cobalt)] text-[var(--cobalt)]" : "text-muted"} ${
+                        popped === a.id ? "pop" : ""
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Details */}
+                <div className="relative -mt-8 px-3 pb-3">
+                  <p className="artist-name truncate text-lg leading-tight">{a.name}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    {a.origin !== "unknown" && (
+                      <Chip>{a.origin === "india" ? "India" : "International"}</Chip>
+                    )}
                   </div>
-                  <div className="flex shrink-0 gap-0.5">
+                  <p className="mt-2 min-h-[2.5rem] text-xs leading-snug" aria-live="polite">
+                    {scanning ? (
+                      <span className="text-muted">{lastLog}</span>
+                    ) : a.last_scan_status === "error" ? (
+                      <button
+                        type="button"
+                        onClick={() => void startScan(a.id)}
+                        className="text-urgent underline underline-offset-2"
+                      >
+                        Couldn&apos;t check — retry
+                      </button>
+                    ) : a.show_count > 0 ? (
+                      <span className="font-medium text-confirmed">
+                        {a.show_count} show{a.show_count === 1 ? "" : "s"} in India
+                      </span>
+                    ) : a.last_scanned_at ? (
+                      <span className="text-muted">No India shows yet</span>
+                    ) : (
+                      <span className="text-muted">Not checked yet</span>
+                    )}
+                    <span className="block text-muted">
+                      checked {relativeAgo(a.last_scanned_at)}
+                    </span>
+                  </p>
+                  <div className="mt-2 flex gap-1.5">
                     <button
                       type="button"
-                      onClick={() => toggleFavorite(a)}
-                      aria-pressed={a.is_favorite}
-                      aria-label={a.is_favorite ? `Unfavorite ${a.name}` : `Favorite ${a.name}`}
-                      title="Favorites are checked more often and ranked higher"
-                      className="grid h-10 w-10 place-items-center rounded-[10px] hover:bg-raised"
-                    >
-                      <Star
-                        className={`h-5 w-5 ${a.is_favorite ? "fill-urgent text-urgent" : "text-muted"}`}
-                      />
-                    </button>
-                    <button
-                      type="button"
+                      data-ripple
                       onClick={() => void startScan(a.id)}
                       disabled={running}
-                      aria-label={`Check ${a.name} now`}
-                      title="Check now"
-                      className="grid h-10 w-10 place-items-center rounded-[10px] hover:bg-raised disabled:opacity-50"
+                      className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-raised px-2 text-xs font-medium hover:bg-line disabled:opacity-50"
                     >
                       <RefreshCw
-                        className={`h-4 w-4 text-muted ${scanning ? "animate-spin" : ""}`}
+                        className={`h-3.5 w-3.5 ${scanning ? "animate-spin" : ""}`}
+                        aria-hidden
                       />
+                      {scanning ? "Checking…" : "Check now"}
                     </button>
                     <button
                       type="button"
                       onClick={() => remove(a)}
                       aria-label={`Remove ${a.name}`}
-                      className="grid h-10 w-10 place-items-center rounded-[10px] hover:bg-raised"
+                      className="grid h-9 w-9 place-items-center rounded-[10px] text-muted hover:bg-raised hover:text-ink"
                     >
-                      <X className="h-4 w-4 text-muted" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-                <p className="mt-3 text-sm" aria-live="polite">
-                  {scanning ? (
-                    <span className="text-muted">{lastLog}</span>
-                  ) : a.last_scan_status === "error" ? (
-                    <button
-                      type="button"
-                      onClick={() => void startScan(a.id)}
-                      className="text-urgent underline underline-offset-2"
-                    >
-                      Couldn&apos;t check — retry
-                    </button>
-                  ) : a.show_count > 0 ? (
-                    <span className="font-medium text-confirmed">
-                      {a.show_count} show{a.show_count === 1 ? "" : "s"} in India
-                    </span>
-                  ) : a.last_scanned_at ? (
-                    <span className="text-muted">No India shows yet</span>
-                  ) : (
-                    <span className="text-muted">Not checked yet</span>
-                  )}
-                  <span className="text-muted"> · checked {relativeAgo(a.last_scanned_at)}</span>
-                </p>
               </li>
             );
           })}

@@ -4,7 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { CalendarPlus, ExternalLink, MapPin, Ticket, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Avatar } from "./Avatar";
+import { markIfLoaded } from "./Avatar";
 import { Chip, CityChip, ConfidenceChip } from "./Chips";
 import { stubModel } from "./ShowCard";
 import { useToast } from "./ToastProvider";
@@ -251,14 +251,45 @@ function DrawerBody({
 
   return (
     <div className="pb-10">
-      <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-line bg-raised p-4">
-        <Avatar name={show.artist.name} src={show.artist.image_url} size={64} />
-        <div className="min-w-0 flex-1">
-          <Dialog.Title className="artist-name truncate text-2xl leading-tight">
+      {/* Photo banner: the artist's picture, softly blended into the sheet. */}
+      <div className="relative h-56 overflow-hidden md:h-64">
+        {show.artist.image_url && /^https:\/\//.test(show.artist.image_url) ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={show.artist.image_url}
+            alt=""
+            referrerPolicy="no-referrer"
+            ref={markIfLoaded}
+            onLoad={(e) => (e.currentTarget.dataset.loaded = "true")}
+            className="fade-img sheet-photo h-full w-full object-cover"
+          />
+        ) : (
+          <div
+            aria-hidden
+            className="h-full w-full"
+            style={{ background: "linear-gradient(135deg, var(--cobalt), var(--sky))" }}
+          />
+        )}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, var(--surface-raised) 4%, color-mix(in srgb, var(--surface-raised) 55%, transparent) 45%, transparent 75%)",
+          }}
+        />
+        <Dialog.Close
+          aria-label="Close"
+          className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-surface/85 backdrop-blur hover:bg-surface"
+        >
+          <X className="h-5 w-5" />
+        </Dialog.Close>
+        <div className="absolute inset-x-0 bottom-0 p-4">
+          <Dialog.Title className="artist-name text-3xl leading-tight md:text-4xl">
             {show.artist.name}
           </Dialog.Title>
           {show.title && <p className="truncate text-sm text-muted">{show.title}</p>}
-          <div className="mt-1 flex flex-wrap gap-1.5">
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
             <CityChip show={show} />
             <ConfidenceChip
               confidence={Number(show.confidence)}
@@ -268,12 +299,6 @@ function DrawerBody({
             {show.decision === "going" && <Chip tone="confirmed">Going</Chip>}
           </div>
         </div>
-        <Dialog.Close
-          aria-label="Close"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] hover:bg-surface"
-        >
-          <X className="h-5 w-5" />
-        </Dialog.Close>
       </div>
 
       <div className="space-y-5 p-4">
