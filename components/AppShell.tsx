@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <ScanProvider>
           <a
             href="#main"
-            className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-[12px] focus:bg-stage focus:px-4 focus:py-2 focus:text-stage-ink"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-[10px] focus:bg-stage focus:px-4 focus:py-2 focus:text-stage-ink"
           >
             Skip to content
           </a>

@@ -22,7 +22,7 @@ export function Avatar({
         height={size}
         unoptimized
         referrerPolicy="no-referrer"
-        className={`shrink-0 rounded-[14px] object-cover ${className}`}
+        className={`shrink-0 rounded-[12px] object-cover ${className}`}
         style={style}
       />
     );
@@ -31,7 +31,7 @@ export function Avatar({
     <span
       aria-hidden
       style={{ ...style, fontSize: size * 0.36 }}
-      className={`artist-name grid shrink-0 place-items-center rounded-[14px] bg-raised text-muted ${className}`}
+      className={`artist-name grid shrink-0 place-items-center rounded-[12px] bg-raised text-muted ${className}`}
     >
       {monogram(name)}
     </span>

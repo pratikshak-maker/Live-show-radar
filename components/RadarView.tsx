@@ -120,7 +120,7 @@ export function RadarView({
     <div className="space-y-4">
       <h1 className="sr-only">Radar</h1>
       {hasSamples && shows.some((s) => s.is_sample) && (
-        <p className="rounded-[14px] border border-urgent/40 bg-urgent/10 px-4 py-2.5 text-sm">
+        <p className="rounded-[12px] border border-sky bg-sky/20 px-4 py-2.5 text-sm">
           These are examples. Real shows appear after the first scan.
         </p>
       )}
@@ -128,7 +128,7 @@ export function RadarView({
       <AskBox onOpen={(id) => setOpen(id)} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="View" className="flex rounded-[12px] bg-surface p-1">
+        <div role="group" aria-label="View" className="flex rounded-[10px] bg-surface p-1">
           {(["list", "map"] as const).map((v) => (
             <button
               key={v}
@@ -151,7 +151,7 @@ export function RadarView({
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="min-h-11 rounded-[12px] border border-line bg-surface px-3 text-sm"
+            className="min-h-11 rounded-[10px] border border-line bg-surface px-3 text-sm"
           >
             {cities.map((c) => (
               <option key={c} value={c}>
@@ -170,7 +170,7 @@ export function RadarView({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search artist…"
-            className="min-h-11 w-full rounded-[12px] border border-line bg-surface pl-9 pr-3 text-sm placeholder:text-muted"
+            className="min-h-11 w-full rounded-[10px] border border-line bg-surface pl-9 pr-3 text-sm placeholder:text-muted"
           />
         </label>
         {hiddenCount > 0 && (
@@ -178,7 +178,7 @@ export function RadarView({
             type="button"
             onClick={() => setShowHidden((h) => !h)}
             aria-pressed={showHidden}
-            className={`min-h-11 rounded-[12px] px-3 text-sm ${showHidden ? "bg-raised text-ink" : "text-muted hover:text-ink"}`}
+            className={`min-h-11 rounded-[10px] px-3 text-sm ${showHidden ? "bg-raised text-ink" : "text-muted hover:text-ink"}`}
           >
             Hidden ({hiddenCount})
           </button>
@@ -234,7 +234,7 @@ export function RadarView({
 
 function EmptyRadar() {
   return (
-    <div className="rounded-[18px] border border-line bg-surface p-8 text-center">
+    <div className="rounded-[14px] border border-line bg-surface p-8 text-center">
       <p className="artist-name text-2xl">All quiet on the radar</p>
       <p className="mx-auto mt-2 max-w-[60ch] text-muted">
         No India shows announced for your artists right now. The radar checks every 30 minutes and

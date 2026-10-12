@@ -2,7 +2,7 @@ export function ShowCardSkeleton() {
   return (
     <div
       aria-hidden
-      className="grid grid-cols-[1fr_132px] overflow-hidden rounded-[18px] border border-line bg-surface max-[520px]:grid-cols-[1fr_108px]"
+      className="grid grid-cols-[1fr_132px] overflow-hidden rounded-[14px] border border-line bg-surface max-[520px]:grid-cols-[1fr_108px]"
     >
       <div className="flex gap-3 p-4">
         <div className="skeleton h-14 w-14 shrink-0" />

@@ -77,7 +77,7 @@ export function ConfidenceChip({
       <Tooltip.Portal>
         <Tooltip.Content
           sideOffset={6}
-          className="z-[60] max-w-[260px] rounded-[12px] border border-line bg-raised px-3 py-2 text-sm"
+          className="z-[60] max-w-[260px] rounded-[10px] border border-line bg-raised px-3 py-2 text-sm"
         >
           Only {sourceCount || "one"} source{sourceCount === 1 ? "" : "s"} mention this show and
           none are a ticketing page yet. Check the source before you plan around it.

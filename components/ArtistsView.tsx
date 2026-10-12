@@ -141,7 +141,7 @@ export function ArtistsView({
           {spotifyEnabled && (
             <a
               href="/api/auth/spotify/start"
-              className="inline-flex min-h-11 items-center rounded-[12px] border border-line px-4 text-sm font-medium hover:bg-surface"
+              className="inline-flex min-h-11 items-center rounded-[10px] border border-line px-4 text-sm font-medium hover:bg-surface"
             >
               Connect Spotify
             </a>
@@ -181,7 +181,7 @@ export function ArtistsView({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search artists…"
-            className="min-h-11 w-full rounded-[12px] border border-line bg-surface pl-9 pr-3 text-sm placeholder:text-muted"
+            className="min-h-11 w-full rounded-[10px] border border-line bg-surface pl-9 pr-3 text-sm placeholder:text-muted"
           />
         </label>
       </div>
@@ -197,7 +197,7 @@ export function ArtistsView({
           {shown.map((a) => {
             const scanning = running && scanningArtistId === a.id;
             return (
-              <li key={a.id} className="rounded-[18px] border border-line bg-surface p-4">
+              <li key={a.id} className="rounded-[14px] border border-line bg-surface p-4">
                 <div className="flex gap-3">
                   <Avatar name={a.name} src={a.image_url} size={52} />
                   <div className="min-w-0 flex-1">
@@ -356,14 +356,14 @@ function AddArtistBar({ onAdded }: { onAdded: (a: ArtistItem, created: boolean) 
           }}
           placeholder="Add an artist by name…"
           disabled={busy}
-          className="min-h-11 w-full rounded-[12px] border border-line bg-surface px-4 text-base placeholder:text-muted"
+          className="min-h-11 w-full rounded-[10px] border border-line bg-surface px-4 text-base placeholder:text-muted"
         />
       </label>
       {open && visible.length > 0 && (
         <ul
           id="artist-suggestions"
           role="listbox"
-          className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-[14px] border border-line bg-raised p-1"
+          className="absolute z-20 mt-1 max-h-72 w-full overflow-y-auto rounded-[12px] border border-line bg-raised p-1"
         >
           {visible.map((r, i) => (
             <li key={r.mbid} role="option" aria-selected={i === active}>

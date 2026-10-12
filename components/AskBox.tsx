@@ -50,7 +50,7 @@ export function AskBox({ onOpen }: { onOpen: (id: string) => void }) {
           onChange={(e) => setQ(e.target.value)}
           maxLength={300}
           placeholder="Ask: any shows in Bengaluru this month?"
-          className="min-h-12 w-full rounded-[14px] border border-line bg-surface pl-10 pr-24 text-base placeholder:text-muted"
+          className="min-h-12 w-full rounded-[12px] border border-line bg-surface pl-10 pr-24 text-base placeholder:text-muted"
         />
         <button
           type="submit"
@@ -61,7 +61,7 @@ export function AskBox({ onOpen }: { onOpen: (id: string) => void }) {
         </button>
       </form>
       {(res || err) && (
-        <div className="mt-2 rounded-[14px] border border-line bg-surface p-4" aria-live="polite">
+        <div className="mt-2 rounded-[12px] border border-line bg-surface p-4" aria-live="polite">
           {err && <p className="text-sm text-urgent">{err}</p>}
           {res && res.answer === null && (
             <p className="text-sm text-muted">
@@ -80,7 +80,7 @@ export function AskBox({ onOpen }: { onOpen: (id: string) => void }) {
                       <button
                         type="button"
                         onClick={() => onOpen(s.id)}
-                        className="min-h-10 rounded-[12px] border border-line px-3 text-left text-sm hover:bg-raised"
+                        className="min-h-10 rounded-[10px] border border-line px-3 text-left text-sm hover:bg-raised"
                       >
                         <span className="artist-name">{s.artist.name}</span>
                         <span className="text-muted">

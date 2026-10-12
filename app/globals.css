@@ -1,50 +1,68 @@
 @import "tailwindcss";
 
-/* "The stage at night" — design tokens. Dark is the default. */
+/* Cobalt sky design tokens. Palette: cobalt #0047AB, navy #000080, sky #82C8E5, slate #6D8196.
+   Light is the default; dark (navy night) follows the OS or the theme toggle. Text pairs meet WCAG AA. */
 :root {
-  --bg: #1a1030;
-  --surface: #251942;
-  --surface-raised: #32235a;
-  --text: #f4eeff;
-  --text-muted: #a99bc9;
-  --stage: #ff4f8b;
-  --stage-ink: #1a1030;
-  --urgent: #ffb534;
-  --confirmed: #5be3b6;
-  --line: rgba(244, 238, 255, 0.1);
-  --glow: rgba(255, 79, 139, 0.35);
-  color-scheme: dark;
-}
+  --cobalt: #0047ab;
+  --navy: #000080;
+  --sky: #82c8e5;
+  --slate: #6d8196;
 
-:root[data-theme="light"] {
-  --bg: #fbf8ff;
+  --bg: #f5f9fc;
   --surface: #ffffff;
-  --surface-raised: #f1eafb;
-  --text: #1e1534;
-  --text-muted: #5e5378;
-  --stage: #d62f6c;
+  --surface-raised: #e9f4fa;
+  --text: #000080;
+  --text-muted: #4e6074;
+  --stage: #0047ab;
   --stage-ink: #ffffff;
-  --urgent: #b86e00;
-  --confirmed: #0e8a63;
-  --line: rgba(30, 21, 52, 0.1);
-  --glow: rgba(214, 47, 108, 0.25);
+  --urgent: #000080;
+  --confirmed: #0b6e99;
+  --line: rgba(0, 0, 128, 0.12);
+  --glow: rgba(0, 71, 171, 0.22);
+  --stub-bg: #000080;
+  --stub-ink: #ffffff;
+  --stub-accent: #82c8e5;
+  --stub-muted: #b8ccdd;
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #fbf8ff;
-    --surface: #ffffff;
-    --surface-raised: #f1eafb;
-    --text: #1e1534;
-    --text-muted: #5e5378;
-    --stage: #d62f6c;
-    --stage-ink: #ffffff;
-    --urgent: #b86e00;
-    --confirmed: #0e8a63;
-    --line: rgba(30, 21, 52, 0.1);
-    --glow: rgba(214, 47, 108, 0.25);
-    color-scheme: light;
+:root[data-theme="dark"] {
+  --bg: #00004a;
+  --surface: #000080;
+  --surface-raised: #101c96;
+  --text: #f3f9fd;
+  --text-muted: #a9bed0;
+  --stage: #82c8e5;
+  --stage-ink: #000080;
+  --urgent: #82c8e5;
+  --confirmed: #b9e2f2;
+  --line: rgba(130, 200, 229, 0.2);
+  --glow: rgba(130, 200, 229, 0.3);
+  --stub-bg: #0047ab;
+  --stub-ink: #ffffff;
+  --stub-accent: #82c8e5;
+  --stub-muted: #d6e9f5;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #00004a;
+    --surface: #000080;
+    --surface-raised: #101c96;
+    --text: #f3f9fd;
+    --text-muted: #a9bed0;
+    --stage: #82c8e5;
+    --stage-ink: #000080;
+    --urgent: #82c8e5;
+    --confirmed: #b9e2f2;
+    --line: rgba(130, 200, 229, 0.2);
+    --glow: rgba(130, 200, 229, 0.3);
+    --stub-bg: #0047ab;
+    --stub-ink: #ffffff;
+    --stub-accent: #82c8e5;
+    --stub-muted: #d6e9f5;
+    color-scheme: dark;
   }
 }
 
@@ -59,10 +77,14 @@
   --color-urgent: var(--urgent);
   --color-confirmed: var(--confirmed);
   --color-line: var(--line);
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
-  --radius-card: 18px;
-  --radius-btn: 12px;
+  --color-cobalt: var(--cobalt);
+  --color-navy: var(--navy);
+  --color-sky: var(--sky);
+  --color-slate: var(--slate);
+  --font-display: var(--font-display-face), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body-face), ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 14px;
+  --radius-btn: 10px;
 }
 
 html {
@@ -83,6 +105,7 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
+  letter-spacing: -0.025em;
 }
 
 :focus-visible {
@@ -92,9 +115,40 @@ h3 {
 
 .artist-name {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-stretch: 85%;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+/* The palette itself, as a four-band stripe and a four-block logo mark. */
+.palette-stripe {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 4px;
+}
+.logo-mark {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.palette-stripe > span:nth-child(1),
+.logo-mark > span:nth-child(1) {
+  background: var(--cobalt);
+}
+.palette-stripe > span:nth-child(2),
+.logo-mark > span:nth-child(2) {
+  background: var(--navy);
+}
+.palette-stripe > span:nth-child(3),
+.logo-mark > span:nth-child(3) {
+  background: var(--sky);
+}
+.palette-stripe > span:nth-child(4),
+.logo-mark > span:nth-child(4) {
+  background: var(--slate);
 }
 
 /* ── Ticket stub card: perforation + notches cut with mask ─────────── */
@@ -105,7 +159,8 @@ h3 {
   display: grid;
   grid-template-columns: 1fr var(--stub-w);
   background: var(--surface);
-  border-radius: 18px;
+  border-radius: 14px;
+  overflow: hidden;
   -webkit-mask:
     radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 0, #0000 98%, #000) top / 100%
       51% no-repeat,
@@ -123,13 +178,25 @@ h3 {
   background: var(--surface-raised);
 }
 .stub-card.is-glow {
-  box-shadow:
-    0 0 0 1px var(--stage),
-    0 0 28px -4px var(--glow);
+  border-color: var(--stage);
+  box-shadow: 0 10px 30px -12px var(--glow);
 }
-.stub-perf {
+/* Tear-off stub: a solid colour block, like a swatch from the palette. */
+.stub-panel {
   border-left: 2px dashed var(--line);
-  margin: 14px 0;
+  background: var(--surface-raised);
+  color: var(--text-muted);
+}
+.stub-panel[data-tone="urgent"] {
+  background: var(--stub-bg);
+  border-left-color: color-mix(in srgb, var(--stub-accent) 45%, transparent);
+  color: var(--stub-muted);
+}
+.stub-panel[data-tone="urgent"] .stub-big {
+  color: var(--stub-accent);
+}
+.stub-panel[data-tone="urgent"] .stub-sub {
+  border-color: color-mix(in srgb, var(--stub-accent) 30%, transparent);
 }
 @media (max-width: 520px) {
   .stub-card {
@@ -241,6 +308,6 @@ h3 {
 /* Leaflet needs to sit under our sheets */
 .leaflet-container {
   font-family: var(--font-sans);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--surface);
 }

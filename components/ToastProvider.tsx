@@ -43,7 +43,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             onOpenChange={(open) => {
               if (!open) setItems((prev) => prev.filter((x) => x.id !== t.id));
             }}
-            className="flex items-start gap-3 rounded-[14px] border border-line bg-raised p-3 pr-2 text-sm shadow-none data-[state=closed]:opacity-0 data-[state=open]:slide-in"
+            className="flex items-start gap-3 rounded-[12px] border border-line bg-raised p-3 pr-2 text-sm shadow-none data-[state=closed]:opacity-0 data-[state=open]:slide-in"
           >
             <span className="mt-0.5 shrink-0" aria-hidden>
               {t.kind === "error" ? (

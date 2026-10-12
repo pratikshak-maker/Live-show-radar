@@ -16,7 +16,7 @@ export function ScanButton() {
       onClick={() => void startScan()}
       disabled={running || cooling}
       aria-busy={running}
-      className="inline-flex min-h-11 items-center gap-2 rounded-[12px] bg-stage px-3.5 font-medium text-stage-ink transition-opacity hover:opacity-90 disabled:opacity-70 md:px-4"
+      className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-stage px-3.5 font-medium text-stage-ink transition-opacity hover:opacity-90 disabled:opacity-70 md:px-4"
     >
       <span className={`radar-icon ${running ? "is-sweeping" : ""}`} aria-hidden />
       {running ? (

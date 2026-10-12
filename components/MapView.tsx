@@ -38,9 +38,9 @@ export default function MapView({
 }) {
   const colors = useMemo(
     () => ({
-      act_now: cssVar("--stage", "#ff4f8b"),
-      home: cssVar("--confirmed", "#5be3b6"),
-      elsewhere: cssVar("--text-muted", "#a99bc9"),
+      act_now: cssVar("--cobalt", "#0047ab"),
+      home: cssVar("--sky", "#82c8e5"),
+      elsewhere: cssVar("--slate", "#6d8196"),
     }),
     [],
   );
@@ -57,7 +57,7 @@ export default function MapView({
 
   return (
     <div
-      className="h-[60vh] min-h-[360px] overflow-hidden rounded-[18px] border border-line"
+      className="h-[60vh] min-h-[360px] overflow-hidden rounded-[14px] border border-line"
       role="region"
       aria-label="Map of upcoming shows"
     >

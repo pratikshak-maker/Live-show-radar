@@ -92,7 +92,7 @@ function Meter({
 }) {
   const pct = max ? Math.min(100, Math.round((used / max) * 100)) : null;
   return (
-    <div className="rounded-[18px] border border-line bg-surface p-4">
+    <div className="rounded-[14px] border border-line bg-surface p-4">
       <p className="text-sm text-muted">{label}</p>
       <p className="artist-name text-2xl">
         {used}
@@ -140,7 +140,7 @@ function HistoryRow({ run }: { run: RunSummary }) {
   }
 
   return (
-    <li className="rounded-[14px] border border-line bg-surface">
+    <li className="rounded-[12px] border border-line bg-surface">
       <button
         type="button"
         onClick={() => void toggle()}
@@ -201,7 +201,7 @@ export function ActivityView({
 
       <section
         aria-labelledby="live"
-        className="mt-5 rounded-[18px] border border-line bg-surface p-4"
+        className="mt-5 rounded-[14px] border border-line bg-surface p-4"
       >
         <div className="flex items-center gap-3">
           <span className={`radar-icon text-stage ${running ? "is-sweeping" : ""}`} aria-hidden />
@@ -217,7 +217,7 @@ export function ActivityView({
             <button
               type="button"
               onClick={() => void startScan()}
-              className="ml-auto min-h-10 rounded-[12px] bg-stage px-4 text-sm font-medium text-stage-ink"
+              className="ml-auto min-h-10 rounded-[10px] bg-stage px-4 text-sm font-medium text-stage-ink"
             >
               Check now
             </button>

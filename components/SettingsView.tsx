@@ -174,7 +174,7 @@ export function SettingsView() {
       {locked && (
         <form
           onSubmit={unlock}
-          className="flex flex-wrap items-end gap-2 rounded-[18px] border border-line bg-surface p-4"
+          className="flex flex-wrap items-end gap-2 rounded-[14px] border border-line bg-surface p-4"
         >
           <label className="min-w-[200px] flex-1 text-sm font-medium">
             Admin passcode
@@ -182,13 +182,13 @@ export function SettingsView() {
               type="password"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-[12px] border border-line bg-raised px-3 text-base"
+              className="mt-1 min-h-11 w-full rounded-[10px] border border-line bg-raised px-3 text-base"
               autoComplete="current-password"
             />
           </label>
           <button
             type="submit"
-            className="min-h-11 rounded-[12px] bg-stage px-4 font-medium text-stage-ink"
+            className="min-h-11 rounded-[10px] bg-stage px-4 font-medium text-stage-ink"
           >
             Unlock
           </button>
@@ -217,18 +217,18 @@ export function SettingsView() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@gmail.com"
-              className="mt-1 min-h-11 w-full rounded-[12px] border border-line bg-surface px-3 text-base"
+              className="mt-1 min-h-11 w-full rounded-[10px] border border-line bg-surface px-3 text-base"
             />
           </label>
           <button
             type="submit"
             disabled={locked}
-            className="min-h-11 rounded-[12px] border border-line px-4 font-medium hover:bg-surface disabled:opacity-50"
+            className="min-h-11 rounded-[10px] border border-line px-4 font-medium hover:bg-surface disabled:opacity-50"
           >
             Save
           </button>
         </form>
-        <div className="flex items-center justify-between gap-4 rounded-[14px] border border-line bg-surface p-4">
+        <div className="flex items-center justify-between gap-4 rounded-[12px] border border-line bg-surface p-4">
           <label htmlFor="email-switch" className="text-sm">
             <span className="block font-medium">Email alerts</span>
             <span className="text-muted">
@@ -252,7 +252,7 @@ export function SettingsView() {
             type="button"
             onClick={() => void testAlert()}
             disabled={busy === "test"}
-            className="min-h-11 rounded-[12px] bg-stage px-4 font-medium text-stage-ink disabled:opacity-60"
+            className="min-h-11 rounded-[10px] bg-stage px-4 font-medium text-stage-ink disabled:opacity-60"
           >
             {busy === "test" ? "Sending…" : "Send me a test alert"}
           </button>
@@ -274,7 +274,7 @@ export function SettingsView() {
             onChange={(e) =>
               void patch({ home_city: e.target.value }, `Home city set to ${e.target.value}`)
             }
-            className="min-h-11 rounded-[12px] border border-line bg-surface px-3 text-base disabled:opacity-50"
+            className="min-h-11 rounded-[10px] border border-line bg-surface px-3 text-base disabled:opacity-50"
           >
             {(s?.cities ?? ["Bengaluru"]).map((c) => (
               <option key={c}>{c}</option>
@@ -300,7 +300,7 @@ export function SettingsView() {
             return (
               <li
                 key={i.key}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[14px] border border-line bg-surface p-4"
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[12px] border border-line bg-surface p-4"
               >
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-2 font-medium">
@@ -330,7 +330,7 @@ export function SettingsView() {
             type="button"
             onClick={() => void dataAction("clear_samples")}
             disabled={busy !== null}
-            className="min-h-11 rounded-[12px] border border-line px-4 text-sm font-medium hover:bg-surface disabled:opacity-60"
+            className="min-h-11 rounded-[10px] border border-line px-4 text-sm font-medium hover:bg-surface disabled:opacity-60"
           >
             Clear sample data
           </button>
@@ -338,7 +338,7 @@ export function SettingsView() {
             type="button"
             onClick={() => void dataAction("reset_artists")}
             disabled={busy !== null}
-            className="min-h-11 rounded-[12px] border border-line px-4 text-sm font-medium hover:bg-surface disabled:opacity-60"
+            className="min-h-11 rounded-[10px] border border-line px-4 text-sm font-medium hover:bg-surface disabled:opacity-60"
           >
             Reset artists to the starter list
           </button>
@@ -370,7 +370,7 @@ function ConnAction({
   locked: boolean;
 }) {
   const btn =
-    "inline-flex min-h-10 items-center rounded-[12px] border border-line px-3.5 text-sm font-medium hover:bg-raised";
+    "inline-flex min-h-10 items-center rounded-[10px] border border-line px-3.5 text-sm font-medium hover:bg-raised";
   if (i.key === "googleOAuth") {
     if (!i.configured) {
       return (

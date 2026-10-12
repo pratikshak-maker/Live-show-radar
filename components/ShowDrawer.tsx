@@ -151,7 +151,7 @@ function DrawerBody({
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 min-h-11 rounded-[12px] bg-stage px-4 font-medium text-stage-ink"
+          className="mt-4 min-h-11 rounded-[10px] bg-stage px-4 font-medium text-stage-ink"
         >
           Back to the radar
         </button>
@@ -270,7 +270,7 @@ function DrawerBody({
         </div>
         <Dialog.Close
           aria-label="Close"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] hover:bg-surface"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] hover:bg-surface"
         >
           <X className="h-5 w-5" />
         </Dialog.Close>
@@ -296,7 +296,7 @@ function DrawerBody({
         {/* Early-bird countdown */}
         <section
           aria-label="Early bird"
-          className={`rounded-[18px] border p-4 ${stub.tone === "urgent" ? "border-urgent/40 bg-urgent/10" : "border-line bg-surface"}`}
+          className={`rounded-[14px] border p-4 ${stub.tone === "urgent" ? "border-urgent/40 bg-urgent/10" : "border-line bg-surface"}`}
         >
           <p className="text-sm text-muted">{stub.heading}</p>
           <p
@@ -326,7 +326,7 @@ function DrawerBody({
         {/* AI brief */}
         <section
           aria-label="Should I go?"
-          className="rounded-[18px] border border-line bg-surface p-4"
+          className="rounded-[14px] border border-line bg-surface p-4"
         >
           <h3 className="text-base font-semibold">Should I go?</h3>
           {brief === undefined ? (
@@ -370,7 +370,7 @@ function DrawerBody({
                   href={book}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-[12px] bg-stage px-5 font-medium text-stage-ink hover:opacity-90"
+                  className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-[10px] bg-stage px-5 font-medium text-stage-ink hover:opacity-90"
                 >
                   <Ticket className="h-5 w-5" aria-hidden />
                   Book tickets
@@ -380,7 +380,7 @@ function DrawerBody({
                 type="button"
                 onClick={() => setGoingOpen((o) => !o)}
                 aria-expanded={goingOpen}
-                className="inline-flex min-h-12 items-center justify-center rounded-[12px] border border-line px-5 font-medium hover:bg-surface"
+                className="inline-flex min-h-12 items-center justify-center rounded-[10px] border border-line px-5 font-medium hover:bg-surface"
               >
                 {show.decision === "going" ? "Going ✓" : "I’m going"}
               </button>
@@ -388,14 +388,14 @@ function DrawerBody({
                 type="button"
                 disabled={busy === "maybe"}
                 onClick={() => void decide("maybe", { decideReminder: true }, "maybe")}
-                className="inline-flex min-h-12 items-center justify-center rounded-[12px] px-3 text-sm font-medium text-muted hover:bg-surface disabled:opacity-60"
+                className="inline-flex min-h-12 items-center justify-center rounded-[10px] px-3 text-sm font-medium text-muted hover:bg-surface disabled:opacity-60"
               >
                 {busy === "maybe" ? "Saving…" : "Remind me to decide"}
               </button>
             </div>
 
             {goingOpen && (
-              <div className="rounded-[18px] border border-line bg-surface p-4">
+              <div className="rounded-[14px] border border-line bg-surface p-4">
                 <p className="text-sm font-medium">Add to your calendar</p>
                 <div className="mt-2 space-y-1">
                   <Check
@@ -458,7 +458,7 @@ function DrawerBody({
                       "going",
                     )
                   }
-                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-stage font-medium text-stage-ink disabled:opacity-60"
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-stage font-medium text-stage-ink disabled:opacity-60"
                 >
                   <CalendarPlus className="h-4 w-4" aria-hidden />
                   {busy === "going" ? "Adding…" : "Add to calendar"}
@@ -475,7 +475,7 @@ function DrawerBody({
             )}
 
             {links.length > 0 && (
-              <div className="rounded-[18px] border border-line bg-surface p-4">
+              <div className="rounded-[14px] border border-line bg-surface p-4">
                 <p className="text-sm font-medium">Open each in Google Calendar</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {links.map((l) => (
@@ -484,7 +484,7 @@ function DrawerBody({
                       href={l.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-10 items-center gap-1.5 rounded-[12px] border border-line px-3 text-sm hover:bg-raised"
+                      className="inline-flex min-h-10 items-center gap-1.5 rounded-[10px] border border-line px-3 text-sm hover:bg-raised"
                     >
                       <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                       Add {KIND_LABEL[l.kind]}
@@ -509,7 +509,7 @@ function DrawerBody({
         {show.tiers.length > 0 && (
           <section aria-label="Ticket tiers">
             <h3 className="text-base font-semibold">Ticket tiers</h3>
-            <div className="mt-2 overflow-x-auto rounded-[14px] border border-line">
+            <div className="mt-2 overflow-x-auto rounded-[12px] border border-line">
               <table className="w-full text-left text-sm">
                 <thead className="bg-surface text-muted">
                   <tr>

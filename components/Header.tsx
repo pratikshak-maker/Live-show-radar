@@ -11,8 +11,23 @@ export function Header() {
   const pathname = usePathname();
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-bg/90 backdrop-blur">
+      <div className="palette-stripe" aria-hidden>
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4">
-        <Link href="/" className="font-display text-lg font-bold tracking-tight md:text-xl">
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 font-display text-lg font-semibold tracking-[-0.03em] md:text-xl"
+        >
+          <span className="logo-mark" aria-hidden>
+            <span />
+            <span />
+            <span />
+            <span />
+          </span>
           Live Show Radar
         </Link>
         <nav aria-label="Main" className="mx-auto hidden md:block">
@@ -24,8 +39,8 @@ export function Header() {
                   <Link
                     href={href}
                     aria-current={active ? "page" : undefined}
-                    className={`rounded-[12px] px-3.5 py-2 text-sm font-medium ${
-                      active ? "bg-surface text-ink" : "text-muted hover:text-ink"
+                    className={`rounded-[10px] px-3.5 py-2 text-sm font-medium ${
+                      active ? "bg-stage text-stage-ink" : "text-muted hover:bg-surface hover:text-ink"
                     }`}
                   >
                     {label}

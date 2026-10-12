@@ -76,7 +76,7 @@ export function NotificationsBell() {
         <button
           type="button"
           aria-label={unread > 0 ? `Alerts, ${unread} unread` : "Alerts"}
-          className="relative grid h-11 w-11 place-items-center rounded-[12px] text-muted hover:bg-surface hover:text-ink"
+          className="relative grid h-11 w-11 place-items-center rounded-[10px] text-muted hover:bg-surface hover:text-ink"
         >
           <Bell className="h-5 w-5" />
           {unread > 0 && (
@@ -90,7 +90,7 @@ export function NotificationsBell() {
         <Popover.Content
           align="end"
           sideOffset={8}
-          className="z-50 w-[min(92vw,380px)] rounded-[18px] border border-line bg-raised p-2"
+          className="z-50 w-[min(92vw,380px)] rounded-[14px] border border-line bg-raised p-2"
         >
           <div className="flex items-center justify-between px-3 py-2">
             <h2 className="text-base font-semibold">Alerts</h2>
@@ -119,7 +119,7 @@ export function NotificationsBell() {
                       setOpen(false);
                       router.push(`/?show=${a.show_id}`);
                     }}
-                    className="flex w-full items-start gap-3 rounded-[12px] px-3 py-2.5 text-left hover:bg-surface"
+                    className="flex w-full items-start gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-surface"
                   >
                     <span className="mt-1 shrink-0" aria-hidden>
                       {iconFor(a.alert_type)}

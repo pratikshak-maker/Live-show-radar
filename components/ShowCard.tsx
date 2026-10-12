@@ -118,7 +118,7 @@ export function ShowCard({
               <button
                 type="button"
                 onClick={() => onOpen(show.id)}
-                className="artist-name line-clamp-2 max-w-full text-left text-xl leading-tight after:absolute after:inset-0 after:rounded-[18px] after:content-['']"
+                className="artist-name line-clamp-2 max-w-full text-left text-xl leading-tight after:absolute after:inset-0 after:rounded-[14px] after:content-['']"
                 aria-label={`${show.artist.name} in ${show.city}, ${fmtDay(show.start_date)}. Open details`}
               >
                 {show.artist.name}
@@ -150,7 +150,7 @@ export function ShowCard({
               href={book}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-[12px] bg-stage px-3.5 text-sm font-medium text-stage-ink hover:opacity-90"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-[10px] bg-stage px-3.5 text-sm font-medium text-stage-ink hover:opacity-90"
             >
               <Ticket className="h-4 w-4" aria-hidden />
               Book tickets
@@ -160,7 +160,7 @@ export function ShowCard({
             <button
               type="button"
               onClick={() => onOpen(show.id, "going")}
-              className="inline-flex min-h-10 items-center rounded-[12px] border border-line px-3.5 text-sm font-medium hover:bg-raised"
+              className="inline-flex min-h-10 items-center rounded-[10px] border border-line px-3.5 text-sm font-medium hover:bg-raised"
             >
               {show.decision === "going" ? "Going ✓" : "I’m going"}
             </button>
@@ -168,15 +168,16 @@ export function ShowCard({
         </div>
       </div>
 
-      <div className="relative flex min-w-0 flex-col justify-center px-3 py-4 text-center stub-perf">
-        <p className="text-xs text-muted">{stub.heading}</p>
+      <div
+        data-tone={stub.tone}
+        className="stub-panel relative flex min-w-0 flex-col justify-center px-3 py-4 text-center"
+      >
+        <p className="text-xs font-medium uppercase tracking-[0.08em]">{stub.heading}</p>
         <p
           key={stub.pulse ? now.getTime() : "static"}
           suppressHydrationWarning
           aria-live="off"
-          className={`artist-name text-2xl leading-tight ${
-            stub.tone === "urgent" ? "text-urgent" : "text-muted"
-          } ${stub.pulse ? "pulse-minute" : ""}`}
+          className={`stub-big artist-name text-2xl leading-tight ${stub.pulse ? "pulse-minute" : ""}`}
         >
           {stub.big}
         </p>
@@ -184,10 +185,10 @@ export function ShowCard({
         stub.heading === "Early bird" &&
         stub.tone === "urgent" &&
         stub.sub?.startsWith("closes") ? (
-          <p className="text-xs text-muted">left</p>
+          <p className="text-xs">left</p>
         ) : null}
         {stub.sub && (
-          <p suppressHydrationWarning className="mt-1 border-t border-line pt-1 text-xs text-muted">
+          <p suppressHydrationWarning className="stub-sub mt-1 border-t border-line pt-1 text-xs">
             {stub.sub}
           </p>
         )}
@@ -196,7 +197,7 @@ export function ShowCard({
             type="button"
             onClick={() => onCheck(show.artist.id)}
             disabled={checking}
-            className="relative z-10 mt-2 min-h-9 rounded-[10px] bg-raised px-2 text-xs font-medium hover:bg-line disabled:opacity-60"
+            className="relative z-10 mt-2 min-h-9 rounded-[8px] bg-surface px-2 text-xs font-medium text-ink hover:bg-bg disabled:opacity-60"
           >
             {checking ? "Checking…" : "Check now"}
           </button>

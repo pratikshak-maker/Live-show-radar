@@ -64,7 +64,7 @@ export function ImportLastfm({ onDone }: { onDone: () => void }) {
       <Popover.Trigger asChild>
         <button
           type="button"
-          className="inline-flex min-h-11 items-center rounded-[12px] border border-line px-4 text-sm font-medium hover:bg-surface"
+          className="inline-flex min-h-11 items-center rounded-[10px] border border-line px-4 text-sm font-medium hover:bg-surface"
         >
           Import from Last.fm
         </button>
@@ -73,7 +73,7 @@ export function ImportLastfm({ onDone }: { onDone: () => void }) {
         <Popover.Content
           align="start"
           sideOffset={8}
-          className="z-50 w-[min(92vw,360px)] rounded-[18px] border border-line bg-raised p-4"
+          className="z-50 w-[min(92vw,360px)] rounded-[14px] border border-line bg-raised p-4"
         >
           {!rows ? (
             <form
@@ -88,7 +88,7 @@ export function ImportLastfm({ onDone }: { onDone: () => void }) {
                 <input
                   value={user}
                   onChange={(e) => setUser(e.target.value)}
-                  className="mt-1 min-h-11 w-full rounded-[12px] border border-line bg-surface px-3 text-base"
+                  className="mt-1 min-h-11 w-full rounded-[10px] border border-line bg-surface px-3 text-base"
                   autoFocus
                 />
               </label>
@@ -96,7 +96,7 @@ export function ImportLastfm({ onDone }: { onDone: () => void }) {
               <button
                 type="submit"
                 disabled={busy || user.trim().length < 2}
-                className="min-h-11 w-full rounded-[12px] bg-stage font-medium text-stage-ink disabled:opacity-60"
+                className="min-h-11 w-full rounded-[10px] bg-stage font-medium text-stage-ink disabled:opacity-60"
               >
                 {busy ? "Loading…" : "Show my top artists"}
               </button>
@@ -134,7 +134,7 @@ export function ImportLastfm({ onDone }: { onDone: () => void }) {
                 type="button"
                 onClick={() => void confirm()}
                 disabled={busy || checked.size === 0}
-                className="mt-3 min-h-11 w-full rounded-[12px] bg-stage font-medium text-stage-ink disabled:opacity-60"
+                className="mt-3 min-h-11 w-full rounded-[10px] bg-stage font-medium text-stage-ink disabled:opacity-60"
               >
                 {busy ? "Adding…" : `Add ${checked.size} artists`}
               </button>

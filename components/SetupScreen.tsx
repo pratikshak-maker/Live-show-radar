@@ -35,7 +35,7 @@ export function SetupScreen() {
       </p>
       <ol className="mt-6 space-y-3">
         {steps.map((s, i) => (
-          <li key={s.title} className="rounded-[18px] border border-line bg-surface p-4">
+          <li key={s.title} className="rounded-[14px] border border-line bg-surface p-4">
             <div className="flex items-start gap-3">
               <span
                 className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-sm font-semibold ${

@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
+import { Inter, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 
-const display = Bricolage_Grotesque({
+const display = Inter_Tight({
   subsets: ["latin"],
-  variable: "--font-bricolage",
+  variable: "--font-display-face",
   display: "swap",
   fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
 });
 
-const body = Instrument_Sans({
+const body = Inter({
   subsets: ["latin"],
-  variable: "--font-instrument",
+  variable: "--font-body-face",
   display: "swap",
   fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
 });
@@ -24,7 +24,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1a1030",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f9fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#00004a" },
+  ],
   width: "device-width",
   initialScale: 1,
 };
