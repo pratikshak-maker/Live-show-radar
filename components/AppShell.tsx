@@ -1,5 +1,6 @@
 "use client";
 
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { ToastProvider } from "./ToastProvider";
 import { ScanProvider } from "./ScanProvider";
 import { Header } from "./Header";
@@ -9,6 +10,7 @@ import { StatusLine } from "./StatusLine";
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ToastProvider>
+      <Tooltip.Provider>
       <ScanProvider>
         <a
           href="#main"
@@ -23,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
         <BottomTabs />
       </ScanProvider>
+      </Tooltip.Provider>
     </ToastProvider>
   );
 }
