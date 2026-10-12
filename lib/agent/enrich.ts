@@ -1,4 +1,6 @@
 import { evidenceToText } from "../html-evidence";
+import { readEnv } from "../env";
+import { readUrls } from "../integrations/gemini";
 import { scrapePage } from "../integrations/scrapingbee";
 import { isTicketingDomain, normalizeUrl } from "../normalize";
 import type { ArtistRow, ShowRow } from "../types";
@@ -13,7 +15,8 @@ export function urlsInText(text: string): string[] {
 
 /** Which ticketing URLs deserve a (paid) scrape this run. Pure; unit-tested. */
 export function pickScrapeTargets(
-  d: Pick<Discovery, "grounded" | "tm" | "fallbackUrls" | "groundedText">,
+  d: Pick<Discovery, "grounded" | "tm" | "fallbackUrls" | "groundedText"> &
+    Partial<Pick<Discovery, "pageNotes" | "news">>,
   existing: Pick<ShowRow, "ticket_url" | "last_enriched_at" | "early_bird_status">[],
   now: Date,
   limit = 3,
@@ -23,6 +26,8 @@ export function pickScrapeTargets(
     ...d.tm.map((e) => e.url).filter((u): u is string => Boolean(u)),
     ...d.fallbackUrls,
     ...urlsInText(d.groundedText ?? ""),
+    ...Object.values(d.pageNotes ?? {}).flatMap((t) => urlsInText(t)),
+    ...(d.news ?? []).map((n) => n.url),
   ];
   const seen = new Set<string>();
   const out: string[] = [];
@@ -94,8 +99,62 @@ export async function enrich(
     });
   }
 
+  // News articles (keyless discovery) — what each article says, as read by Gemini.
+  for (const a of d.news) {
+    const notes = d.pageNotes[a.url];
+    sources.push({
+      n: n++,
+      url: a.url,
+      kind: "news",
+      fetchedAt: now,
+      title: a.title,
+      ticketingPage: false,
+      content: [
+        `News article: ${a.title}${a.domain ? ` (${a.domain})` : ""}${a.publishedAt ? `, published ${a.publishedAt.slice(0, 10)}` : ""}`,
+        a.snippet ? `Snippet: ${a.snippet}` : "",
+        notes ? `What the article says:\n${notes}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    });
+  }
+
+  // No ScrapingBee? Let Gemini read the ticket pages (URL context) for tiers and deadlines.
+  if (!readEnv().SCRAPINGBEE_API_KEY && d.aiAvailable && !ctx.gemini.exhausted) {
+    const ticketTargets = pickScrapeTargets(d, existing, ctx.now(), 2);
+    if (ticketTargets.length > 0) {
+      await logger.info(
+        "scrape",
+        `Reading ${ticketTargets.length} ticket page${ticketTargets.length === 1 ? "" : "s"}…`,
+        name,
+      );
+      const r = await readUrls(
+        ticketTargets,
+        `Tracked artist: "${name}". From each ticket page report: event name, city, venue, date and time, every ticket tier with INR price and whether it's on sale, sold out or upcoming, any early-bird / phase / pre-sale tier, and sale start and end dates and times exactly as written.`,
+        ctx.gemini,
+      );
+      ctx.stats.geminiCalls = ctx.gemini.calls;
+      if (r.ok) {
+        for (const p of r.data.reads.filter((x) => x.notes)) {
+          sources.push({
+            n: n++,
+            url: p.url,
+            kind: "gemini",
+            fetchedAt: ctx.now().toISOString(),
+            title: "Ticket page",
+            ticketingPage: true,
+            content: `Ticket page (read live):\n${p.notes}`,
+          });
+        }
+      }
+    }
+  }
+
   // ScrapingBee pages
-  const targets = ctx.scrapeBlocked ? [] : pickScrapeTargets(d, existing, ctx.now());
+  const targets =
+    ctx.scrapeBlocked || !readEnv().SCRAPINGBEE_API_KEY
+      ? []
+      : pickScrapeTargets(d, existing, ctx.now());
   for (const url of targets) {
     let host = url;
     try {

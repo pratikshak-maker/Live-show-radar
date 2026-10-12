@@ -130,7 +130,7 @@ async function processArtist(db: Db, artist: ArtistRow, ctx: RunCtx): Promise<vo
       await logger.success(
         "alert",
         vc.confidence >= 0.5
-          ? "New show! Sending an email alert."
+          ? "New show! Added to your alerts."
           : "New show, but confidence is low — no email yet.",
         name,
       );

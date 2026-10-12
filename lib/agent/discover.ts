@@ -1,5 +1,6 @@
 import { readEnv } from "../env";
-import { groundedSearch } from "../integrations/gemini";
+import { groundedSearch, readUrls } from "../integrations/gemini";
+import { searchNews } from "../integrations/news";
 import { googleSearch, pickResultUrls } from "../integrations/scrapingbee";
 import { searchEvents } from "../integrations/ticketmaster";
 import { todayIST } from "../time";
@@ -34,6 +35,8 @@ export async function discover(artist: ArtistRow, ctx: RunCtx): Promise<Discover
     fallbackUrls: [],
     noShows: false,
     aiAvailable: true,
+    news: [],
+    pageNotes: {},
   };
 
   await logger.info("search", `Searching the web for ${name} shows in India…`, name);
@@ -56,14 +59,63 @@ export async function discover(artist: ArtistRow, ctx: RunCtx): Promise<Discover
       );
   } else {
     a1Failed = true;
-    d.aiAvailable = false;
-    const why =
-      g.reason === "not_configured"
-        ? "Gemini isn't connected, so I'll use ticketing sources only."
-        : g.reason === "quota_exhausted"
-          ? `${g.message} Falling back to other sources.`
-          : "Couldn't reach the search service — trying other sources.";
-    await logger.warn("search", why, name);
+    // Grounding being off doesn't mean Gemini is off: reading pages and extraction still work.
+    d.aiAvailable = g.reason !== "not_configured" && !ctx.gemini.quotaExhausted;
+    if (g.reason === "not_configured") {
+      await logger.warn(
+        "search",
+        "Gemini isn't connected, so I'll use ticketing sources only.",
+        name,
+      );
+    } else if (!(g.reason === "quota_exhausted" && ctx.gemini.groundingBlocked)) {
+      await logger.warn(
+        "search",
+        "Couldn't reach Google Search — searching the news instead.",
+        name,
+      );
+    }
+  }
+
+  // A1b — Keyless news search + Gemini reads the articles (when grounding isn't available)
+  if (a1Failed && d.aiAvailable) {
+    const year = Number(todayIST(ctx.now()).slice(0, 4));
+    const n = await searchNews(`"${name}" (concert OR tour OR gig OR live OR festival) India`);
+    if (n.ok && n.data.length > 0) {
+      d.news = n.data.slice(0, 6);
+      await logger.info(
+        "search",
+        `Found ${d.news.length} recent article${d.news.length === 1 ? "" : "s"} about ${name}. Reading them…`,
+        name,
+      );
+      const read = await readUrls(
+        d.news.map((a) => a.url),
+        `Today is ${todayIST(ctx.now())} (Asia/Kolkata). Tracked artist: "${name}". Report only facts about LIVE PERFORMANCES by this exact artist in INDIA happening on or after today (${year} or ${year + 1}): city, venue, date (with year), start time, event/tour/festival name, ticket platform and ticket page URLs, ticket tiers with INR prices, early-bird / pre-sale details and any sale start or end dates and times. Mention cancellations or postponements.`,
+        ctx.gemini,
+      );
+      ctx.stats.geminiCalls = ctx.gemini.calls;
+      if (read.ok) {
+        for (const r of read.data.reads) if (r.notes) d.pageNotes[r.url] = r.notes;
+        const useful = Object.keys(d.pageNotes).length;
+        await logger.info(
+          "search",
+          useful > 0
+            ? `Read ${useful} article${useful === 1 ? "" : "s"} with show details. Checking them…`
+            : `The articles don't mention an upcoming India show for ${name}.`,
+          name,
+        );
+      } else {
+        await logger.warn(
+          "search",
+          `Couldn't read the articles (${read.message}). Using headlines only.`,
+          name,
+        );
+      }
+    } else if (n.ok) {
+      d.noShows = true;
+      await logger.info("search", `No recent news about ${name} playing in India.`, name);
+    } else {
+      await logger.warn("search", `News search didn't answer (${n.message}).`, name);
+    }
   }
 
   // A2 — Ticketmaster (secondary)

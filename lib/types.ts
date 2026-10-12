@@ -15,7 +15,7 @@ export type Tier = {
 export type SourceRef = {
   url: string;
   title?: string;
-  kind: "gemini" | "scrapingbee" | "ticketmaster";
+  kind: "gemini" | "scrapingbee" | "ticketmaster" | "news";
   fetched_at: string;
 };
 

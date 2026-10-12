@@ -251,6 +251,65 @@ export async function generateJson<S extends z.ZodTypeAny>(
   return fail("invalid_response", `Gemini output failed validation: ${lastErrors}`.slice(0, 300));
 }
 
+export type PageRead = { url: string; ok: boolean; notes: string };
+
+/** Pure: split "### <url>" sections from a URL-context answer into per-URL notes (unit-tested). */
+export function splitPageNotes(text: string, urls: string[]): Map<string, string> {
+  const out = new Map<string, string>();
+  const parts = text.split(/^#{2,3}\s+/m).slice(1);
+  for (const part of parts) {
+    const nl = part.indexOf("\n");
+    const head = (nl < 0 ? part : part.slice(0, nl)).trim().replace(/^<|>$/g, "");
+    const body = (nl < 0 ? "" : part.slice(nl + 1)).trim();
+    const match = urls.find((u) => head === u || head.includes(u) || u.includes(head));
+    if (match && body && !/^nothing relevant\.?$/i.test(body)) out.set(match, body.slice(0, 2500));
+  }
+  return out;
+}
+
+/**
+ * Gemini's URL-context tool: Google fetches the pages and Gemini reports what they say.
+ * Works on keys whose plan doesn't include Google Search grounding.
+ */
+export async function readUrls(
+  urls: string[],
+  instruction: string,
+  budget: GeminiBudget,
+): Promise<Result<{ reads: PageRead[]; latencyMs: number }>> {
+  const ai = getAi();
+  if (!ai) return notConfigured("Gemini");
+  const list = [...new Set(urls)].slice(0, 8);
+  if (list.length === 0) return ok({ reads: [], latencyMs: 0 });
+  const prompt = `${instruction}
+
+For EACH URL below, write a section that starts with a line "### <the exact URL>" followed by the facts that page states.
+If a page has nothing relevant, write "Nothing relevant." under its heading. Never guess or add facts the page doesn't state.
+
+URLS:
+${list.join("\n")}`;
+  const r = await withRetries(budget, 40_000, "plain", (signal, model) =>
+    ai.models.generateContent({
+      model,
+      contents: prompt,
+      config: { tools: [{ urlContext: {} }], temperature: 0.1, abortSignal: signal },
+    }),
+  );
+  if (!r.ok) return r;
+  const resp = r.data.value;
+  const status = new Map<string, boolean>();
+  for (const m of resp.candidates?.[0]?.urlContextMetadata?.urlMetadata ?? []) {
+    if (m.retrievedUrl)
+      status.set(m.retrievedUrl, String(m.urlRetrievalStatus).includes("SUCCESS"));
+  }
+  const notes = splitPageNotes(resp.text ?? "", list);
+  const reads = list.map((url) => ({
+    url,
+    ok: (status.get(url) ?? notes.has(url)) && notes.has(url),
+    notes: notes.get(url) ?? "",
+  }));
+  return ok({ reads, latencyMs: r.data.latencyMs });
+}
+
 /** Cheap connectivity probe for check:integrations. */
 export async function ping(): Promise<Result<string>> {
   const ai = getAi();

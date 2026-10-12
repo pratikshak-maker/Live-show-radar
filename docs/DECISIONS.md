@@ -55,3 +55,12 @@ A log of judgment calls, and every place the build deviates from the original pr
   every call so dates stay `YYYY-MM-DD` strings (no timezone shift), timestamps are ISO strings and numerics/bigints are numbers.
 - **Test coverage of the database layer** uses PGlite (Postgres in WASM): the real migration + seed, and an end-to-end scan run,
   reconcile, notifier idempotency, sweeps, locks and rate limits through the app's own code paths.
+
+- **Discovery without Google Search grounding.** The owner's Gemini key returns 429 "check your plan and billing" for the
+  `googleSearch` tool on every model (verified model by model), while Gemini's `urlContext` tool works. When grounding is
+  unavailable the agent searches **Bing News RSS** (no key; personal, non-commercial use) for recent articles, has Gemini
+  **read the articles and ticket pages** via `urlContext`, then runs the normal JSON extraction + deterministic validation.
+  Without ScrapingBee, ticket pages are read the same way. Grounding being blocked no longer disables extraction.
+- **Model fallback.** `GEMINI_FALLBACK_MODEL` (default `gemini-flash-lite-latest`) is used when `GEMINI_MODEL` is
+  overloaded or times out. `GEMINI_MAX_CALLS_PER_RUN` defaults to 20 (article read + ticket read + extraction per artist).
+- **Spotify is "Coming soon"** (`SPOTIFY_COMING_SOON` in `lib/constants.ts`); the import code is kept.

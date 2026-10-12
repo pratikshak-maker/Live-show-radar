@@ -2,6 +2,7 @@ import type { City } from "../normalize";
 import type { ArtistRow, SourceRef } from "../types";
 import type { GeminiBudget, GroundedSource } from "../integrations/gemini";
 import type { TmEvent } from "../integrations/ticketmaster";
+import type { NewsItem } from "../integrations/news";
 import type { PageEvidence } from "../html-evidence";
 import type { Candidate } from "./schemas";
 import type { RunLogger } from "./logger";
@@ -49,6 +50,10 @@ export type Discovery = {
   fallbackUrls: string[];
   noShows: boolean;
   aiAvailable: boolean;
+  /** Keyless news discovery (used when Google Search grounding isn't on the key's plan). */
+  news: NewsItem[];
+  /** What Gemini read on each news page (URL → notes). */
+  pageNotes: Record<string, string>;
 };
 
 export type Bundle = {
