@@ -63,9 +63,19 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 type CallKind = "grounded" | "json" | "plain";
 
 /** Primary model first; on "overloaded" the next attempt switches to the fallback model. */
-function modelsToTry(): string[] {
+/** Models whose daily free quota is spent (per server instance, reset at IST midnight). */
+const spentToday = new Map<string, string>();
+const todayKey = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
+/** Primary model, then the fallbacks, skipping any whose daily quota is already spent. */
+export function modelsToTry(): string[] {
   const e = readEnv();
-  return [...new Set([e.GEMINI_MODEL, e.GEMINI_FALLBACK_MODEL])];
+  const day = todayKey();
+  const all = [e.GEMINI_MODEL, ...e.GEMINI_FALLBACK_MODEL.split(",")]
+    .map((m) => m.trim())
+    .filter(Boolean);
+  const fresh = [...new Set(all)].filter((m) => spentToday.get(m) !== day);
+  return fresh.length > 0 ? fresh : [e.GEMINI_MODEL];
 }
 
 async function withRetries<T>(
@@ -82,7 +92,7 @@ async function withRetries<T>(
   const models = modelsToTry();
   let modelIdx = 0;
   const backoffs = [1000, 3000];
-  for (let attempt = 0; attempt <= backoffs.length; attempt++) {
+  for (let attempt = 0; attempt <= backoffs.length + models.length; attempt++) {
     if (budget.exhausted)
       return fail("quota_exhausted", "This run's Gemini call limit was reached.");
     budget.calls++;
@@ -95,7 +105,16 @@ async function withRetries<T>(
       return ok({ value, latencyMs: Date.now() - started });
     } catch (e) {
       const c = classifyGeminiError(e);
+      const rotate = () => {
+        spentToday.set(models[modelIdx], todayKey());
+        if (modelIdx < models.length - 1) {
+          modelIdx++;
+          return true;
+        }
+        return false;
+      };
       if (c.kind === "daily_quota") {
+        if (rotate()) continue; // next model has its own daily allowance
         budget.quotaExhausted = true;
         return fail("quota_exhausted", "Gemini's daily quota is used up.");
       }
@@ -107,12 +126,13 @@ async function withRetries<T>(
             "Gemini web search isn't available on this API key's plan.",
           );
         }
+        if (rotate()) continue;
         budget.quotaExhausted = true;
-        return fail("quota_exhausted", "This Gemini API key has no quota left for this model.");
+        return fail("quota_exhausted", "Gemini's daily quota is used up.");
       }
       if (c.kind === "rate_limited") {
         if (attempt < backoffs.length) {
-          await sleep(c.retryMs ?? backoffs[attempt]);
+          await sleep(c.retryMs ?? backoffs[Math.min(attempt, backoffs.length - 1)]);
           continue;
         }
         return fail("rate_limited", "Gemini is rate limiting us.", c.retryMs ?? undefined);
@@ -121,7 +141,7 @@ async function withRetries<T>(
         if (attempt < backoffs.length) {
           if (modelIdx < models.length - 1)
             modelIdx++; // try the lighter model straight away
-          else await sleep(backoffs[attempt]);
+          else await sleep(backoffs[Math.min(attempt, backoffs.length - 1)]);
           continue;
         }
         return fail("upstream_error", "Gemini is busy right now. We'll retry on the next check.");

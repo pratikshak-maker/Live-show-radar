@@ -18,7 +18,10 @@ const EnvSchema = z.object({
   GEMINI_API_KEY: optStr(),
   GEMINI_MODEL: strDefault("gemini-flash-latest"),
   // Used only when GEMINI_MODEL is overloaded (503).
-  GEMINI_FALLBACK_MODEL: strDefault("gemini-flash-lite-latest"),
+  // Comma-separated; tried in order when GEMINI_MODEL is busy or a model's daily free quota is spent.
+  GEMINI_FALLBACK_MODEL: strDefault(
+    "gemini-flash-lite-latest,gemini-3.1-flash-lite,gemini-3-flash-preview",
+  ),
   GEMINI_MAX_CALLS_PER_RUN: intDefault(20),
   SCRAPINGBEE_API_KEY: optStr(),
   SCRAPINGBEE_DAILY_CREDIT_BUDGET: intDefault(150),
