@@ -45,7 +45,7 @@ A log of judgment calls, and every place the build deviates from the original pr
 - **Email threshold** `min_confidence_for_email` defaults to 0.5 and is stored in settings.
 - **Theme toggle** lives in the desktop header and in Settings (the mobile header only carries logo, scan and bell, per spec).
 - **Dev-only routes** `/dev/cards` and `/dev/radar` render fixture data and return 404 in production.
-- **Setup links** point at `lib/constants.ts → REPO_URL`; replace `OWNER` with your GitHub username after you push.
+- **Setup links** point at `lib/constants.ts → REPO_URL`; now points at github.com/pratikshak-maker/Live-show-radar.
 - **Venue geocoding** runs lazily: a few venues at the end of a scan if time remains, and on first map view.
 - **Test coverage of the database layer** uses PGlite (Postgres in WASM) to run the real migration and seed; Supabase-client calls
   themselves are exercised only against a live project.
