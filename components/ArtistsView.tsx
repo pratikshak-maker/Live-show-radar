@@ -9,6 +9,7 @@ import { ImportLastfm } from "./ImportLastfm";
 import { useScan } from "./ScanProvider";
 import { useToast } from "./ToastProvider";
 import { relativeAgo } from "@/lib/time";
+import { SPOTIFY_COMING_SOON } from "@/lib/constants";
 import type { ArtistRow } from "@/lib/types";
 
 export type ArtistItem = ArtistRow & { show_count: number };
@@ -59,6 +60,7 @@ export function ArtistsView({
       bad_state: "That Spotify sign-in expired. Please try again.",
       error: "Couldn't reach Spotify. Please try again.",
       not_configured: "Spotify isn't set up yet.",
+      coming_soon: "Spotify import is coming soon. Add artists by name for now.",
     };
     push({ title: msg[s] ?? "Spotify", kind: s === "ok" ? "success" : "info" });
   }, [params, push]);
@@ -139,17 +141,30 @@ export function ArtistsView({
         <AddArtistBar onAdded={onAdded} />
         <div className="flex flex-wrap gap-2">
           {lastfmEnabled && <ImportLastfm onDone={reload} />}
-          {spotifyEnabled && (
-            <a
-              href="/api/auth/spotify/start"
-              className="inline-flex min-h-11 items-center rounded-[10px] border border-line px-4 text-sm font-medium hover:bg-surface"
+          {SPOTIFY_COMING_SOON ? (
+            <span
+              aria-disabled="true"
+              title="Spotify import is coming soon"
+              className="inline-flex min-h-11 cursor-not-allowed items-center gap-2 rounded-[10px] border border-dashed border-line px-4 text-sm font-medium text-muted"
             >
-              Connect Spotify
-            </a>
+              Spotify
+              <span className="rounded-full bg-sky/30 px-2 py-0.5 text-xs text-ink">
+                Coming soon
+              </span>
+            </span>
+          ) : (
+            spotifyEnabled && (
+              <a
+                href="/api/auth/spotify/start"
+                className="inline-flex min-h-11 items-center rounded-[10px] border border-line px-4 text-sm font-medium hover:bg-surface"
+              >
+                Connect Spotify
+              </a>
+            )
           )}
         </div>
       </div>
-      {spotifyEnabled && (
+      {!SPOTIFY_COMING_SOON && spotifyEnabled && (
         <p className="mt-2 text-xs text-muted">
           Spotify only allows accounts added by the app owner to connect. Everyone else can add
           artists by name or import from Last.fm.

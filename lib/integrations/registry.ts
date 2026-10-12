@@ -1,6 +1,7 @@
 import { readEnv } from "../env";
 import { getDb, one } from "../db";
 import { encryptionAvailable } from "../crypto";
+import { SPOTIFY_COMING_SOON } from "../constants";
 
 export type IntegrationKey =
   | "database"
@@ -23,6 +24,8 @@ export type IntegrationStatus = {
   /** Google only: a refresh token exists but Google rejected it. */
   needsReconnect?: boolean;
   required: boolean;
+  /** Shown as "Coming soon"; not offered and not counted as missing. */
+  comingSoon?: boolean;
   purpose: string;
   setupDocAnchor: string;
 };
@@ -41,7 +44,7 @@ export function getConfiguredMap(): Record<IntegrationKey, IntegrationStatus> {
     setupDocAnchor: string,
   ): IntegrationStatus => ({ key, label, configured, required, purpose, setupDocAnchor });
 
-  return {
+  const map: Record<IntegrationKey, IntegrationStatus> = {
     database: mk(
       "database",
       "Database (Neon)",
@@ -131,6 +134,9 @@ export function getConfiguredMap(): Record<IntegrationKey, IntegrationStatus> {
       "no-key-sources",
     ),
   };
+  map.spotify.comingSoon = SPOTIFY_COMING_SOON;
+  map.spotify.purpose = "Import the artists you follow on Spotify in one tap.";
+  return map;
 }
 
 export async function getOAuthState(provider: "google" | "spotify"): Promise<OAuthState> {
@@ -164,5 +170,5 @@ export async function getIntegrationStatus(): Promise<Record<IntegrationKey, Int
 }
 
 export function missingConnectionsCount(map: Record<IntegrationKey, IntegrationStatus>): number {
-  return Object.values(map).filter((s) => !s.configured).length;
+  return Object.values(map).filter((s) => !s.configured && !s.comingSoon).length;
 }

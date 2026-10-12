@@ -25,6 +25,7 @@ type Integration = {
   configured: boolean;
   connected?: boolean;
   needsReconnect?: boolean;
+  comingSoon?: boolean;
   purpose: string;
   setupDocAnchor: string;
 };
@@ -292,11 +293,13 @@ export function SettingsView() {
           {integrations.map((i) => {
             const noKey = NO_KEY.has(i.key);
             const needs = i.needsReconnect;
-            const chip = needs
-              ? { text: "Needs reconnect", tone: "urgent" as const }
-              : i.connected || (i.configured && i.key !== "googleOAuth" && i.key !== "spotify")
-                ? { text: noKey ? "No key needed" : "Connected", tone: "confirmed" as const }
-                : { text: "Not connected", tone: "muted" as const };
+            const chip = i.comingSoon
+              ? { text: "Coming soon", tone: "stage" as const }
+              : needs
+                ? { text: "Needs reconnect", tone: "urgent" as const }
+                : i.connected || (i.configured && i.key !== "googleOAuth" && i.key !== "spotify")
+                  ? { text: noKey ? "No key needed" : "Connected", tone: "confirmed" as const }
+                  : { text: "Not connected", tone: "muted" as const };
             return (
               <li
                 key={i.key}
@@ -413,6 +416,7 @@ function ConnAction({
       </a>
     );
   }
+  if (i.comingSoon) return null;
   if (i.key === "spotify" && i.configured) {
     return (
       <a href="/api/auth/spotify/start" className={btn}>

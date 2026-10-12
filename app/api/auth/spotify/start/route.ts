@@ -2,10 +2,14 @@ import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { spotifyAuthUrl } from "@/lib/integrations/spotify";
 import { readEnv } from "@/lib/env";
+import { SPOTIFY_COMING_SOON } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (SPOTIFY_COMING_SOON) {
+    return NextResponse.redirect(new URL("/artists?spotify=coming_soon", readEnv().APP_URL));
+  }
   const state = randomBytes(32).toString("hex");
   const url = spotifyAuthUrl(state);
   if (!url)
